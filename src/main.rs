@@ -119,7 +119,7 @@ fn spawn_random_particles(mut commands: Commands) {
         commands.spawn((
             Particle,
             Transform::from_xyz(x, y, 0.0),
-            Mass(30000.0),
+            Mass(20000.0),
             Velocity(x_v, y_v),
             Acceleration(0.0, 0.0),
         ));
@@ -130,7 +130,7 @@ fn spawn_big_particle(mut commands: Commands) {
     commands.spawn((
         Particle,
         Transform::from_xyz(0.0, 0.0, 0.0),
-        Mass(5000000.0),
+        Mass(30000.0),
         Velocity(0.0, 0.0),
         Acceleration(0.0, 0.0),
     ));
