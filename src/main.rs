@@ -94,7 +94,7 @@ fn calc_grav_accel(
             }
             let delta = transform.translation - *other_translation;
             let d_sq = delta.length_squared();
-            let d = d_sq.sqrt().max(150.0);
+            let d = d_sq.sqrt().max(75.0);
             let direction = delta / d;
             accel.0 += -other_mass * direction.x / d_sq * delta_time;
             accel.1 += -other_mass * direction.y / d_sq * delta_time;
@@ -119,7 +119,7 @@ fn spawn_random_particles(mut commands: Commands) {
         commands.spawn((
             Particle,
             Transform::from_xyz(x, y, 0.0),
-            Mass(20000.0),
+            Mass(25000.0),
             Velocity(x_v, y_v),
             Acceleration(0.0, 0.0),
         ));
@@ -130,7 +130,7 @@ fn spawn_big_particle(mut commands: Commands) {
     commands.spawn((
         Particle,
         Transform::from_xyz(0.0, 0.0, 0.0),
-        Mass(30000.0),
+        Mass(200000.0),
         Velocity(0.0, 0.0),
         Acceleration(0.0, 0.0),
     ));
