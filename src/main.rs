@@ -56,8 +56,8 @@ fn update_particle_positions(
 ) {
     let delta_time = time.delta_secs();
     query.par_iter_mut().for_each(|(mut position, velocity)| {
-        position.translation[0] += velocity.0 * delta_time;
-        position.translation[1] += velocity.1 * delta_time;
+        let new_pos = position.translation.truncate() + velocity.0 * delta_time;
+        position.translation = new_pos.extend(0.0)
     })
 }
 
@@ -67,7 +67,6 @@ fn update_particle_velocities(mut query: Query<(&mut Velocity, &Acceleration)>, 
         .par_iter_mut()
         .for_each(|(mut velocity, acceleration)| {
             velocity.0 += acceleration.0 * delta_time;
-            velocity.1 += acceleration.1 * delta_time;
         })
 }
 
@@ -78,8 +77,7 @@ fn calc_grav_accel(
     let delta_time = time.delta_secs();
 
     for (_, mut accel, _, _) in query.iter_mut() {
-        accel.0 = 0.0;
-        accel.1 = 0.0;
+        accel.0 = Vec2::ZERO;
     }
 
     let entities: Vec<(Entity, f32, Vec3)> = query
@@ -94,10 +92,9 @@ fn calc_grav_accel(
             }
             let delta = transform.translation - *other_translation;
             let d_sq = delta.length_squared();
-            let d = d_sq.sqrt().max(75.0);
+            let d = d_sq.sqrt().max(50.0);
             let direction = delta / d;
-            accel.0 += -other_mass * direction.x / d_sq * delta_time;
-            accel.1 += -other_mass * direction.y / d_sq * delta_time;
+            accel.0 += (-other_mass * direction.truncate() / d_sq) * delta_time;
         }
     }
 }
@@ -120,8 +117,8 @@ fn spawn_random_particles(mut commands: Commands) {
             Particle,
             Transform::from_xyz(x, y, 0.0),
             Mass(25000.0),
-            Velocity(x_v, y_v),
-            Acceleration(0.0, 0.0),
+            Velocity(Vec2::new(x_v, y_v)),
+            Acceleration(Vec2::new(0.0, 0.0)),
         ));
     }
 }
@@ -131,8 +128,8 @@ fn spawn_big_particle(mut commands: Commands) {
         Particle,
         Transform::from_xyz(0.0, 0.0, 0.0),
         Mass(200000.0),
-        Velocity(0.0, 0.0),
-        Acceleration(0.0, 0.0),
+        Velocity(Vec2::new(0.0, 0.0)),
+        Acceleration(Vec2::new(0.0, 0.0)),
     ));
 }
 
@@ -140,10 +137,10 @@ fn spawn_big_particle(mut commands: Commands) {
 struct Particle;
 
 #[derive(Component)]
-struct Velocity(f32, f32);
+struct Velocity(Vec2);
 
 #[derive(Component)]
-struct Acceleration(f32, f32);
+struct Acceleration(Vec2);
 
 #[derive(Component)]
 struct Mass(f32);
