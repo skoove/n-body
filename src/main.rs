@@ -2,6 +2,14 @@ use bevy::prelude::*;
 use rand::prelude::*;
 use std::f32::consts::PI;
 
+use camera::*;
+use motion::*;
+use particle::*;
+
+mod camera;
+mod motion;
+mod particle;
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -12,135 +20,8 @@ fn main() {
             }),
             ..Default::default()
         }))
-        .add_systems(
-            Startup,
-            (
-                setup_camera,
-                (spawn_big_particle, spawn_random_particles, show_particles).chain(),
-            ),
-        )
-        .add_systems(
-            Update,
-            (
-                calc_grav_accel,
-                update_particle_velocities,
-                update_particle_positions,
-            )
-                .chain(),
-        )
+        .add_plugins(MotionPlugin)
+        .add_plugins(ParticlePlugin)
+        .add_plugins(CameraPlugin)
         .run();
 }
-
-fn setup_camera(mut commands: Commands) {
-    commands.spawn(Camera2d);
-}
-
-fn show_particles(
-    mut commands: Commands,
-    query: Query<(Entity, &Particle)>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
-    let shape = Mesh2d(meshes.add(Circle::new(1.0)));
-    let material = MeshMaterial2d(materials.add(Color::hsv(0.0, 0.0, 1.0)));
-    for (entity, _) in &query {
-        commands
-            .entity(entity)
-            .insert((shape.clone(), material.clone()));
-    }
-}
-
-fn update_particle_positions(
-    mut query: Query<(&mut Transform, &Velocity), With<Particle>>,
-    time: Res<Time>,
-) {
-    let delta_time = time.delta_secs();
-    query.par_iter_mut().for_each(|(mut position, velocity)| {
-        let new_pos = position.translation.truncate() + velocity.0 * delta_time;
-        position.translation = new_pos.extend(0.0)
-    })
-}
-
-fn update_particle_velocities(mut query: Query<(&mut Velocity, &Acceleration)>, time: Res<Time>) {
-    let delta_time = time.delta_secs();
-    query
-        .par_iter_mut()
-        .for_each(|(mut velocity, acceleration)| {
-            velocity.0 += acceleration.0 * delta_time;
-        })
-}
-
-fn calc_grav_accel(
-    mut query: Query<(Entity, &mut Acceleration, &Mass, &Transform)>,
-    time: Res<Time>,
-) {
-    let delta_time = time.delta_secs();
-
-    for (_, mut accel, _, _) in query.iter_mut() {
-        accel.0 = Vec2::ZERO;
-    }
-
-    let entities: Vec<(Entity, f32, Vec3)> = query
-        .iter()
-        .map(|(entity, _accel, mass, transform)| (entity, mass.0, transform.translation))
-        .collect();
-
-    for (entity, mut accel, _mass, transform) in query.iter_mut() {
-        for (other_entity, other_mass, other_translation) in &entities {
-            if entity == *other_entity {
-                continue;
-            }
-            let delta = transform.translation - *other_translation;
-            let d_sq = delta.length_squared();
-            let d = d_sq.sqrt().max(50.0);
-            let direction = delta / d;
-            accel.0 += (-other_mass * direction.truncate() / d_sq) * delta_time;
-        }
-    }
-}
-
-fn spawn_random_particles(mut commands: Commands) {
-    let amount_to_spawn = 2000;
-    let spawn_radius: f32 = 400.0;
-    let velocity_range = -100.0..100.0;
-    let mut rng = rand::rng();
-    for _ in 0..amount_to_spawn {
-        let angle: f32 = rng.random_range(0.0..2.0 * PI);
-        let radius: f32 = rng.random_range(0.0..spawn_radius).min(100.0);
-
-        let x = radius * angle.cos();
-        let y = radius * angle.sin();
-
-        let x_v = rng.random_range(velocity_range.clone());
-        let y_v = rng.random_range(velocity_range.clone());
-        commands.spawn((
-            Particle,
-            Transform::from_xyz(x, y, 0.0),
-            Mass(25000.0),
-            Velocity(Vec2::new(x_v, y_v)),
-            Acceleration(Vec2::new(0.0, 0.0)),
-        ));
-    }
-}
-
-fn spawn_big_particle(mut commands: Commands) {
-    commands.spawn((
-        Particle,
-        Transform::from_xyz(0.0, 0.0, 0.0),
-        Mass(200000.0),
-        Velocity(Vec2::new(0.0, 0.0)),
-        Acceleration(Vec2::new(0.0, 0.0)),
-    ));
-}
-
-#[derive(Component)]
-struct Particle;
-
-#[derive(Component)]
-struct Velocity(Vec2);
-
-#[derive(Component)]
-struct Acceleration(Vec2);
-
-#[derive(Component)]
-struct Mass(f32);
