@@ -20,7 +20,7 @@ fn main() {
             }),
             ..Default::default()
         }))
-        .add_plugins(MotionPlugin)
+        // .add_plugins(MotionPlugin)
         .add_plugins(ParticlePlugin)
         .add_plugins(CameraPlugin)
         .run();
