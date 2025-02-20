@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, window::CursorOptions};
 use rand::prelude::*;
 use std::f32::consts::PI;
 
@@ -16,6 +16,10 @@ fn main() {
             primary_window: Some(Window {
                 title: "donttilethanks".into(),
                 mode: bevy::window::WindowMode::BorderlessFullscreen(MonitorSelection::Current),
+                cursor_options: CursorOptions {
+                    visible: true,
+                    ..Default::default()
+                },
                 ..Default::default()
             }),
             ..Default::default()
