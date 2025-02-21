@@ -1,4 +1,3 @@
-use bevy::input::mouse::MouseScrollUnit::{Line, Pixel};
 use bevy::input::mouse::{MouseMotion, MouseWheel};
 
 use crate::*;
@@ -27,12 +26,9 @@ fn zoom_camera(
 ) {
     let mut projection = cam_q.single_mut();
     for event in mouse_scroll_events.read() {
-        match event.unit {
-            Line => projection.scale += -event.y * ZOOM_SENSITIVITY * projection.scale,
-            Pixel => projection.scale += -event.y * ZOOM_SENSITIVITY * projection.scale,
-        }
-        projection.scale = projection.scale.max(0.0);
+        projection.scale += (-event.y * ZOOM_SENSITIVITY * projection.scale);
     }
+    projection.scale = projection.scale.max(0.0)
 }
 
 fn pan_camera(
