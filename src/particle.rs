@@ -35,7 +35,7 @@ fn show_particles(
 }
 
 fn spawn_random_particles(mut commands: Commands) {
-    let amount_to_spawn = 100;
+    let amount_to_spawn = 50;
     let velocity_range = -100.0..100.0;
     let mut rng = rand::rng();
     for _ in 0..amount_to_spawn {
