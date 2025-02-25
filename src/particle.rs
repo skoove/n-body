@@ -35,7 +35,7 @@ fn show_particles(
 }
 
 fn spawn_random_particles(mut commands: Commands) {
-    let amount_to_spawn = 2000;
+    let amount_to_spawn = 100;
     let velocity_range = -100.0..100.0;
     let mut rng = rand::rng();
     for _ in 0..amount_to_spawn {
@@ -61,7 +61,7 @@ fn spawn_big_particle(mut commands: Commands) {
     commands.spawn((
         Particle { radius: 5.0 },
         Transform::from_xyz(0.0, 0.0, 0.0),
-        Mass(25.0),
+        Mass(250.0),
         Velocity(Vec2::new(0.0, 0.0)),
         Acceleration(Vec2::new(0.0, 0.0)),
     ));

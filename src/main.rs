@@ -1,12 +1,15 @@
-use bevy::{prelude::*, window::CursorOptions};
+use bevy::prelude::*;
+use bevy::window::{CursorOptions, PresentMode};
 use rand::prelude::*;
 use std::f32::consts::PI;
 
 use camera::*;
+use gui::*;
 use motion::*;
 use particle::*;
 
 mod camera;
+mod gui;
 mod motion;
 mod particle;
 
@@ -20,11 +23,13 @@ fn main() {
                     visible: true,
                     ..Default::default()
                 },
+                present_mode: PresentMode::AutoNoVsync,
                 ..Default::default()
             }),
             ..Default::default()
         }))
-        // .add_plugins(MotionPlugin)
+        .add_plugins(GuiPlugin)
+        .add_plugins(MotionPlugin)
         .add_plugins(ParticlePlugin)
         .add_plugins(CameraPlugin)
         .run();

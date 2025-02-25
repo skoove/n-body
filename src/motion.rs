@@ -2,7 +2,7 @@ use crate::*;
 
 pub struct MotionPlugin;
 
-const G: f32 = 15000.0;
+const G: f32 = 150000.0;
 
 #[derive(Component)]
 pub struct Velocity(pub Vec2);
