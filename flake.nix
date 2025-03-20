@@ -25,6 +25,7 @@
         cargo
         clippy
         clang
+        rust-analyzer
         pkg-config
       ] ++ librarys;
 

@@ -1,7 +1,5 @@
 use bevy::prelude::*;
 use bevy::window::{CursorOptions, PresentMode};
-use rand::prelude::*;
-use std::f32::consts::PI;
 
 use camera::*;
 use gui::*;

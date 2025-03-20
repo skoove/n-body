@@ -9,13 +9,12 @@ pub struct GuiPlugin;
 
 impl Plugin for GuiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(EguiPlugin).add_systems(Update, test_gui);
+        app.add_plugins(EguiPlugin).add_systems(Update, preformance_gui);
     }
 }
 
-fn test_gui(mut contexts: EguiContexts, time: Res<Time>) {
-    egui::SidePanel::new(egui::panel::Side::Left, "left_panel")
-        .min_width(200.0)
+fn preformance_gui(mut contexts: EguiContexts, time: Res<Time>) {
+    egui::Window::new("preformance")
         .show(contexts.ctx_mut(), |ui| {
             fps_widget(ui, time);
         });
