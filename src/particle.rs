@@ -1,4 +1,8 @@
-use crate::*;
+use bevy::prelude::*;
+use std::f32::consts::PI;
+use rand::prelude::*;
+
+use crate::{Velocity, Acceleration};
 
 pub struct ParticlePlugin;
 
@@ -6,7 +10,7 @@ impl Plugin for ParticlePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Startup,
-            (spawn_random_particles, spawn_big_particle, show_particles).chain(),
+            (spawn_random_particles, spawn_big_particle, show_particles).chain()
         );
     }
 }
@@ -35,7 +39,7 @@ fn show_particles(
 }
 
 fn spawn_random_particles(mut commands: Commands) {
-    let amount_to_spawn = 50;
+    let amount_to_spawn = 1000;
     let velocity_range = -100.0..100.0;
     let mut rng = rand::rng();
     for _ in 0..amount_to_spawn {
