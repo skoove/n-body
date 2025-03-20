@@ -9,17 +9,26 @@
   let
     system = "x86_64-linux";
     pkgs = nixpkgs.legacyPackages.${system};
+
+    librarys = with pkgs; [
+      lld
+      wayland
+      alsa-lib
+      libudev-zero
+      wayland
+      libxkbcommon
+      vulkan-loader
+    ];
   in {
     devShells.${system}.default = pkgs.mkShell {
-      buildInputs = [ pkgs.wayland pkgs.pkg-config ];
-      
-      packages = with pkgs; [
+      buildInputs = with pkgs; [
         cargo
         clippy
         clang
-        lld
-        alsa-lib
-      ];
+        pkg-config
+      ] ++ librarys;
+
+      LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath librarys}";
     };
   };
 }
