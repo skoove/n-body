@@ -19,6 +19,7 @@
       libxkbcommon
       vulkan-loader
       rustfmt
+      rustc
     ];
   in {
     devShells.${system}.default = pkgs.mkShell {
