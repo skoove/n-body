@@ -10,11 +10,10 @@ pub struct GuiPlugin;
 
 impl Plugin for GuiPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_plugins(EguiPlugin)
+        app.add_plugins(EguiPlugin)
             .add_systems(Update, preformance_gui)
             .add_systems(
-                PreUpdate, 
+                PreUpdate,
                 absorb_egui_inputs
                     .after(bevy_egui::input::write_egui_input_system)
                     .before(bevy_egui::begin_pass_system),
@@ -23,10 +22,9 @@ impl Plugin for GuiPlugin {
 }
 
 fn preformance_gui(mut contexts: EguiContexts, time: Res<Time>) {
-    egui::Window::new("preformance")
-        .show(contexts.ctx_mut(), |ui| {
-            fps_widget(ui, time);
-        });
+    egui::Window::new("preformance").show(contexts.ctx_mut(), |ui| {
+        fps_widget(ui, time);
+    });
 }
 
 fn fps_widget(ui: &mut Ui, time: Res<Time>) {
