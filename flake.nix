@@ -18,6 +18,7 @@
       wayland
       libxkbcommon
       vulkan-loader
+      rustfmt
     ];
   in {
     devShells.${system}.default = pkgs.mkShell {
