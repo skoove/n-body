@@ -1,8 +1,8 @@
 use bevy::prelude::*;
-use std::f32::consts::PI;
 use rand::prelude::*;
+use std::f32::consts::PI;
 
-use crate::{Velocity, Acceleration};
+use crate::{Acceleration, Velocity};
 
 pub struct ParticlePlugin;
 
@@ -10,7 +10,7 @@ impl Plugin for ParticlePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Startup,
-            (spawn_random_particles, spawn_big_particle, show_particles).chain()
+            (spawn_random_particles, spawn_big_particle, show_particles).chain(),
         );
     }
 }
