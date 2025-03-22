@@ -3,6 +3,7 @@ use bevy_egui::{
     egui::{self, Ui},
     EguiContexts, EguiPlugin,
 };
+use egui_plot::{Plot, PlotPoints, Points};
 
 use crate::*;
 
@@ -23,14 +24,21 @@ impl Plugin for GuiPlugin {
 
 fn preformance_gui(mut contexts: EguiContexts, time: Res<Time>) {
     egui::Window::new("preformance").show(contexts.ctx_mut(), |ui| {
-        fps_widget(ui, time);
-    });
-}
+        ui.label(format!("frametime: {:.1}ms", 1000.0 * time.delta_secs()));
+        ui.label(format!("fps: {:.0}", 1.0 / time.delta_secs()));
+        ui.separator();
 
-fn fps_widget(ui: &mut Ui, time: Res<Time>) {
-    ui.label(format!("frametime: {:.1}ms", 1000.0 * time.delta_secs()));
-    ui.label(format!("fps: {:.0}", 1.0 / time.delta_secs()));
-    ui.separator();
+        let sin: PlotPoints = (0..1000)
+            .map(|i| {
+                let x = i as f64 * 0.01;
+                [x, x.sin()]
+            })
+            .collect();
+
+        Plot::new("sin")
+            .view_aspect(2.0)
+            .show(ui, |plot_fn| plot_fn.points(Points::new(sin)))
+    });
 }
 
 // source:
