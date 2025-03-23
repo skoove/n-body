@@ -1,9 +1,11 @@
-use bevy::input::mouse::MouseWheel;
+use std::collections::VecDeque;
+
+use bevy::{input::mouse::MouseWheel, render::render_resource::encase::private::Length};
 use bevy_egui::{
     egui::{self, Ui},
     EguiContexts, EguiPlugin,
 };
-use egui_plot::{Plot, PlotPoints, Points};
+use egui_plot::{Line, Plot, PlotPoints, Points};
 
 use crate::*;
 
@@ -18,26 +20,70 @@ impl Plugin for GuiPlugin {
                 absorb_egui_inputs
                     .after(bevy_egui::input::write_egui_input_system)
                     .before(bevy_egui::begin_pass_system),
-            );
+            )
+            .insert_resource(PreformanceData {
+                fps: [0.0].into(),
+                frame_time: [0.0].into(),
+            });
     }
 }
 
-fn preformance_gui(mut contexts: EguiContexts, time: Res<Time>) {
-    egui::Window::new("preformance").show(contexts.ctx_mut(), |ui| {
-        ui.label(format!("frametime: {:.1}ms", 1000.0 * time.delta_secs()));
-        ui.label(format!("fps: {:.0}", 1.0 / time.delta_secs()));
-        ui.separator();
+#[derive(Resource, Debug)]
+struct PreformanceData {
+    fps: VecDeque<f32>,
+    frame_time: VecDeque<f32>,
+}
 
-        let sin: PlotPoints = (0..1000)
-            .map(|i| {
-                let x = i as f64 * 0.01;
-                [x, x.sin()]
-            })
+fn preformance_gui(
+    mut contexts: EguiContexts,
+    time: Res<Time>,
+    mut preformance_data: ResMut<PreformanceData>,
+) {
+    preformance_data.fps.push_back(1.0 / time.delta_secs());
+    preformance_data
+        .frame_time
+        .push_back(1000.0 * time.delta_secs());
+
+    println!("{:#?}", preformance_data);
+
+    if preformance_data.fps.length() > 100 {
+        preformance_data.fps.pop_front();
+    }
+
+    if preformance_data.frame_time.length() > 100 {
+        preformance_data.frame_time.pop_front();
+    }
+
+    egui::Window::new("preformance").show(contexts.ctx_mut(), |ui| {
+        let fps_plot: PlotPoints = preformance_data
+            .fps
+            .iter()
+            .enumerate()
+            .map(|(i, fps)| [i as f64, *fps as f64])
             .collect();
 
-        Plot::new("sin")
-            .view_aspect(2.0)
-            .show(ui, |plot_fn| plot_fn.points(Points::new(sin)))
+        let frame_time_plot: PlotPoints = preformance_data
+            .frame_time
+            .iter()
+            .enumerate()
+            .map(|(i, frametime)| [i as f64, *frametime as f64])
+            .collect();
+
+        ui.horizontal(|ui| {
+            ui.label(format!("frametime: {:.1}ms", 1000.0 * time.delta_secs()));
+
+            Plot::new("fps plot")
+                .view_aspect(2.0)
+                .show(ui, |plot_fn| plot_fn.line(Line::new(fps_plot)));
+        });
+
+        ui.horizontal(|ui| {
+            ui.label(format!("fps: {:.0}", 1.0 / time.delta_secs()));
+
+            Plot::new("frame time plot")
+                .view_aspect(2.0)
+                .show(ui, |plot_fn| plot_fn.line(Line::new(frame_time_plot)));
+        });
     });
 }
 
