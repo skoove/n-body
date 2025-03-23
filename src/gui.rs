@@ -50,8 +50,6 @@ fn performance_gui(
         .frame_time
         .push_back(1000.0 * time.delta_secs());
 
-    println!("{:#?}", performance_data);
-
     while performance_data.frame_time.length() > gui_settings.history_to_show as usize {
         performance_data.frame_time.pop_front();
     }
