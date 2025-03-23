@@ -2,10 +2,10 @@ use std::collections::VecDeque;
 
 use bevy::{input::mouse::MouseWheel, render::render_resource::encase::private::Length};
 use bevy_egui::{
-    egui::{self, Ui},
+    egui::{self, Slider},
     EguiContexts, EguiPlugin,
 };
-use egui_plot::{Line, Plot, PlotPoints, Points};
+use egui_plot::{Line, Plot, PlotPoints};
 
 use crate::*;
 
@@ -14,76 +14,77 @@ pub struct GuiPlugin;
 impl Plugin for GuiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(EguiPlugin)
-            .add_systems(Update, preformance_gui)
+            .add_systems(Update, performance_gui)
             .add_systems(
                 PreUpdate,
                 absorb_egui_inputs
                     .after(bevy_egui::input::write_egui_input_system)
                     .before(bevy_egui::begin_pass_system),
             )
-            .insert_resource(PreformanceData {
-                fps: [0.0].into(),
+            .insert_resource(PerformanceData {
                 frame_time: [0.0].into(),
+            })
+            .insert_resource(PerformanceGuiSettings {
+                history_to_show: 100,
             });
     }
 }
 
 #[derive(Resource, Debug)]
-struct PreformanceData {
-    fps: VecDeque<f32>,
+struct PerformanceData {
     frame_time: VecDeque<f32>,
 }
 
-fn preformance_gui(
+#[derive(Resource)]
+struct PerformanceGuiSettings {
+    history_to_show: i32,
+}
+
+fn performance_gui(
     mut contexts: EguiContexts,
     time: Res<Time>,
-    mut preformance_data: ResMut<PreformanceData>,
+    mut performance_data: ResMut<PerformanceData>,
+    mut gui_settings: ResMut<PerformanceGuiSettings>,
 ) {
-    preformance_data.fps.push_back(1.0 / time.delta_secs());
-    preformance_data
+    performance_data
         .frame_time
         .push_back(1000.0 * time.delta_secs());
 
-    println!("{:#?}", preformance_data);
+    println!("{:#?}", performance_data);
 
-    if preformance_data.fps.length() > 100 {
-        preformance_data.fps.pop_front();
+    while performance_data.frame_time.length() > gui_settings.history_to_show as usize {
+        performance_data.frame_time.pop_front();
     }
 
-    if preformance_data.frame_time.length() > 100 {
-        preformance_data.frame_time.pop_front();
-    }
+    let average_frame_time: f32 =
+        performance_data.frame_time.iter().sum::<f32>() / performance_data.frame_time.len() as f32;
 
-    egui::Window::new("preformance").show(contexts.ctx_mut(), |ui| {
-        let fps_plot: PlotPoints = preformance_data
-            .fps
-            .iter()
-            .enumerate()
-            .map(|(i, fps)| [i as f64, *fps as f64])
-            .collect();
-
-        let frame_time_plot: PlotPoints = preformance_data
+    egui::Window::new("performance").show(contexts.ctx_mut(), |ui| {
+        let frame_time_plot: PlotPoints = performance_data
             .frame_time
             .iter()
             .enumerate()
             .map(|(i, frametime)| [i as f64, *frametime as f64])
             .collect();
 
-        ui.horizontal(|ui| {
-            ui.label(format!("frametime: {:.1}ms", 1000.0 * time.delta_secs()));
+        ui.label(format!("fps: {:.0}", 1.0 / time.delta_secs()));
+        ui.label(format!("frametime: {:.1}ms", 1000.0 * time.delta_secs()));
+        ui.label(format!("average frametime: {:.1}ms", average_frame_time));
+        ui.label("frame time plot");
 
-            Plot::new("fps plot")
-                .view_aspect(2.0)
-                .show(ui, |plot_fn| plot_fn.line(Line::new(fps_plot)));
-        });
+        Plot::new("frame time plot")
+            .height(75.0)
+            .allow_zoom(false)
+            .allow_scroll(false)
+            .allow_drag(false)
+            .show_x(false)
+            .set_margin_fraction(egui::Vec2::new(0.0, 0.0))
+            .include_x(0.0)
+            .include_y(20.0)
+            .x_axis_label("frame")
+            .show(ui, |plot_fn| plot_fn.line(Line::new(frame_time_plot)));
 
-        ui.horizontal(|ui| {
-            ui.label(format!("fps: {:.0}", 1.0 / time.delta_secs()));
-
-            Plot::new("frame time plot")
-                .view_aspect(2.0)
-                .show(ui, |plot_fn| plot_fn.line(Line::new(frame_time_plot)));
-        });
+        ui.add(Slider::new(&mut gui_settings.history_to_show, 0..=500).text("history to show"))
     });
 }
 
