@@ -3,13 +3,13 @@ use bevy::window::{CursorOptions, PresentMode};
 
 use camera::*;
 use gui::*;
-use motion::*;
 use particle::*;
+use simulation::*;
 
 mod camera;
 mod gui;
-mod motion;
 mod particle;
+mod simulation;
 
 fn main() {
     App::new()
