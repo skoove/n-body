@@ -1,36 +1,31 @@
-use crate::particle::Mass;
+use crate::particle::{Mass, Particle};
 use crate::simulation::motion::Acceleration;
 use crate::simulation::SimSettings;
 use bevy::prelude::*;
 
 pub fn calc_grav_accel(
-    mut query: Query<(Entity, &mut Acceleration, &Mass, &Transform)>,
+    mut query: Query<(&mut Acceleration, &Mass, &Transform), With<Particle>>,
     time: Res<Time>,
     sim_settings: Res<SimSettings>,
 ) {
-    let delta_time = time.delta_secs();
-
-    for (_, mut accel, _, _) in query.iter_mut() {
-        accel.0 = Vec2::ZERO;
-    }
-
-    let entities: Vec<(Entity, f32, Vec3)> = query
-        .iter()
-        .map(|(entity, _accel, mass, transform)| (entity, mass.0, transform.translation))
-        .collect();
-
-    for (entity, mut accel, _mass, transform) in query.iter_mut() {
-        for (other_entity, other_mass, other_translation) in &entities {
-            if entity == *other_entity {
-                continue;
-            }
-            let delta = transform.translation - *other_translation;
-            let d_sq = delta.length_squared();
-            let d = d_sq.sqrt();
-            let direction = delta / d;
-            accel.0 += sim_settings.gravity_constant
-                * (-other_mass * direction.truncate() / d_sq)
-                * delta_time;
+    let dt = time.delta_secs();
+    let mut iter = query.iter_combinations_mut();
+    while let Some([(mut accel_1, Mass(mass_1), pos_1), (mut accel_2, Mass(mass_2), pos_2)]) =
+        iter.fetch_next()
+    {
+        // a_a = (m_b/|r|^3) * r * dt * G
+        let pos_1 = pos_1.translation;
+        let pos_2 = pos_2.translation;
+        let delta = pos_2 - pos_1;
+        let distance_sq = delta.length_squared();
+        if distance_sq < 1e-20 {
+            continue;
         }
+        let distance = distance_sq.sqrt();
+        let distance_cubed = distance * distance * distance;
+        accel_1.0 +=
+            (((sim_settings.gravity_constant * mass_2) / (distance_cubed)) * delta).truncate();
+        accel_2.0 -=
+            (((sim_settings.gravity_constant * mass_1) / (distance_cubed)) * delta).truncate();
     }
 }

@@ -34,7 +34,7 @@ fn main() {
                     ..Default::default()
                 })
                 .set(LogPlugin {
-                    level: Level::INFO,
+                    level: Level::DEBUG,
                     ..Default::default()
                 }),
         )

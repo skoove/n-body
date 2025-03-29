@@ -1,5 +1,6 @@
+use super::collisions;
+use super::gravity;
 use crate::particle::Particle;
-use crate::simulation::gravity;
 use crate::simulation::SimSettings;
 use bevy::prelude::*;
 
@@ -9,7 +10,11 @@ impl Plugin for MotionPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (gravity::calc_grav_accel, update_particle_positions)
+            (
+                gravity::calc_grav_accel,
+                collisions::calculate_collisions,
+                update_particle_positions,
+            )
                 .chain()
                 .run_if(sim_not_paused),
         );
@@ -28,12 +33,12 @@ fn sim_not_paused(settings: Res<SimSettings>) -> bool {
 }
 
 fn update_particle_positions(
-    mut query: Query<(&mut Transform, &mut OldPosition, &Acceleration), With<Particle>>,
+    mut query: Query<(&mut Transform, &mut OldPosition, &mut Acceleration), With<Particle>>,
     time: Res<Time>,
 ) {
     query
         .par_iter_mut()
-        .for_each(|(mut position, mut old_position, acceleration)| {
+        .for_each(|(mut position, mut old_position, mut acceleration)| {
             let dt = time.delta_secs();
             let velocity = position.translation - old_position.0.translation;
             old_position.0.translation = position.translation;
@@ -41,5 +46,6 @@ fn update_particle_positions(
             position.translation =
                 (position.translation.truncate() + velocity.truncate() + acceleration.0 * dt * dt)
                     .extend(0.0);
+            acceleration.0 = Vec2::ZERO;
         });
 }

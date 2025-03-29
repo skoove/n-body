@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use motion::MotionPlugin;
+pub mod collisions;
 pub mod gravity;
 pub mod motion;
 
@@ -15,13 +16,15 @@ impl Plugin for SimPlugin {
 pub struct SimSettings {
     pub paused: bool,
     pub gravity_constant: f32,
+    pub collision_substeps: i32,
 }
 
 impl Default for SimSettings {
     fn default() -> Self {
         SimSettings {
             paused: true,
-            gravity_constant: 15000.0,
+            gravity_constant: 1.0,
+            collision_substeps: 4,
         }
     }
 }
