@@ -5,7 +5,7 @@ pub struct MotionPlugin;
 const G: f32 = 150000.0;
 
 #[derive(Component)]
-pub struct PreviousPosition(pub Transform);
+pub struct OldPosition(pub Transform);
 
 #[derive(Component)]
 pub struct Acceleration(pub Vec2);
@@ -16,8 +16,21 @@ impl Plugin for MotionPlugin {
     }
 }
 
-fn update_particle_positions(mut query: Query<&mut Transform, With<Particle>>, time: Res<Time>) {
-    todo!()
+fn update_particle_positions(
+    mut query: Query<(&mut Transform, &mut OldPosition, &Acceleration), With<Particle>>,
+    time: Res<Time>,
+) {
+    query
+        .par_iter_mut()
+        .for_each(|(mut position, mut old_position, acceleration)| {
+            let dt = time.delta_secs();
+            let velocity = position.translation - old_position.0.translation;
+            old_position.0.translation = position.translation;
+
+            position.translation =
+                (position.translation.truncate() + velocity.truncate() + acceleration.0 * dt * dt)
+                    .extend(0.0);
+        });
 }
 
 fn calc_grav_accel(
