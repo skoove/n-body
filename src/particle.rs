@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use rand::prelude::*;
 use std::f32::consts::PI;
 
-use crate::{Acceleration, Velocity};
+use crate::{simulation::OldPosition, Acceleration};
 
 pub struct ParticlePlugin;
 
@@ -39,8 +39,7 @@ fn show_particles(
 }
 
 fn spawn_random_particles(mut commands: Commands) {
-    let amount_to_spawn = 50;
-    let velocity_range = -100.0..100.0;
+    let amount_to_spawn = 1000;
     let mut rng = rand::rng();
     for _ in 0..amount_to_spawn {
         let angle: f32 = rng.random_range(0.0..2.0 * PI);
@@ -48,14 +47,11 @@ fn spawn_random_particles(mut commands: Commands) {
 
         let x = radius * angle.cos();
         let y = radius * angle.sin();
-
-        let x_v = rng.random_range(velocity_range.clone());
-        let y_v = rng.random_range(velocity_range.clone());
         commands.spawn((
             Particle { radius: 2.0 },
             Transform::from_xyz(x, y, 0.0),
+            OldPosition(Transform::from_xyz(x, y, 0.0)),
             Mass(10.0),
-            Velocity(Vec2::new(x_v, y_v)),
             Acceleration(Vec2::new(0.0, 0.0)),
         ));
     }
@@ -65,8 +61,8 @@ fn spawn_big_particle(mut commands: Commands) {
     commands.spawn((
         Particle { radius: 5.0 },
         Transform::from_xyz(0.0, 0.0, 0.0),
+        OldPosition(Transform::from_xyz(0.0, 0.0, 0.0)),
         Mass(250.0),
-        Velocity(Vec2::new(0.0, 0.0)),
         Acceleration(Vec2::new(0.0, 0.0)),
     ));
 }
