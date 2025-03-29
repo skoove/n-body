@@ -12,17 +12,13 @@ impl Plugin for SimulationControlsGuiPlugin {
 
 fn sim_controls_gui(mut contexts: EguiContexts, mut sim_settings: ResMut<SimSettings>) {
     egui::Window::new("simulation controls").show(contexts.ctx_mut(), |ui| {
-        let mut pause_button = ui.button("pause/play");
-        pause_button = if !sim_settings.paused {
-            pause_button.highlight()
-        } else {
-            pause_button
-        };
-        if pause_button.clicked() {
-            debug!("pause button clicked");
+        if sim_settings.paused {
+            if ui.button("play").clicked() {
+                sim_settings.toggle_pause()
+            };
+        } else if ui.button("pause").clicked() {
             sim_settings.toggle_pause();
         }
-
         ui.add(
             egui::Slider::new(&mut sim_settings.gravity_constant, 0.0..=100000.0)
                 .text("gravity constant"),
