@@ -1,4 +1,6 @@
-use crate::*;
+use crate::particle::Mass;
+use crate::particle::Particle;
+use bevy::prelude::*;
 
 pub struct MotionPlugin;
 
@@ -30,6 +32,13 @@ pub struct SimSettings {
 impl Default for SimSettings {
     fn default() -> Self {
         SimSettings { paused: true }
+    }
+}
+
+impl SimSettings {
+    pub fn toggle_pause(&mut self) {
+        self.paused = !self.paused;
+        info!("toggle pause")
     }
 }
 
@@ -77,7 +86,7 @@ fn calc_grav_accel(
             }
             let delta = transform.translation - *other_translation;
             let d_sq = delta.length_squared();
-            let d = d_sq.sqrt().max(50.0);
+            let d = d_sq.sqrt();
             let direction = delta / d;
             accel.0 += G * (-other_mass * direction.truncate() / d_sq) * delta_time;
         }

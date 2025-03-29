@@ -1,4 +1,4 @@
-use crate::SimSettings;
+use crate::simulation::SimSettings;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 
@@ -12,6 +12,15 @@ impl Plugin for SimulationControlsGuiPlugin {
 
 fn sim_controls_gui(mut contexts: EguiContexts, mut sim_settings: ResMut<SimSettings>) {
     egui::Window::new("simulation controls").show(contexts.ctx_mut(), |ui| {
-        ui.checkbox(&mut sim_settings.paused, "paused")
+        let mut pause_button = ui.button("pause");
+        pause_button = if sim_settings.paused {
+            pause_button.highlight()
+        } else {
+            pause_button
+        };
+        if pause_button.clicked() {
+            debug!("pause button clicked");
+            sim_settings.toggle_pause();
+        }
     });
 }
