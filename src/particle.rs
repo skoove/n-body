@@ -2,7 +2,8 @@ use bevy::prelude::*;
 use rand::prelude::*;
 use std::f32::consts::PI;
 
-use crate::{simulation::OldPosition, Acceleration};
+use crate::simulation::Acceleration;
+use crate::simulation::OldPosition;
 
 pub struct ParticlePlugin;
 
