@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use motion::MotionPlugin;
+pub mod gravity;
 pub mod motion;
 
 pub struct SimPlugin;
