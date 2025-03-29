@@ -6,7 +6,7 @@ use camera::CameraPlugin;
 use gui::GuiPlugin;
 use input::InputPlugin;
 use particle::ParticlePlugin;
-use simulation::MotionPlugin;
+use simulation::SimPlugin;
 
 mod camera;
 mod gui;
@@ -42,7 +42,7 @@ fn main() {
             CameraPlugin,
             GuiPlugin,
             InputPlugin,
-            MotionPlugin,
+            SimPlugin,
             ParticlePlugin,
         ))
         .run();
