@@ -20,6 +20,25 @@ jobs:
         extra_nix_config: |
           experimental-features = nix-command flakes
 
+    - name: Cache Nix store
+      uses: actions/cache@v4
+      with:
+        path: /nix/store
+        key: nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}
+        restore-keys: |
+          nix-${{ runner.os }}-
+
+    - name: Cache Cargo dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          cargo-${{ runner.os }}-
+
     - name: Enter Nix dev shell and build
       run: nix develop --command cargo build --verbose
 
