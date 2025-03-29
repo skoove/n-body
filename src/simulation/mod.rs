@@ -24,7 +24,7 @@ impl Default for SimSettings {
         SimSettings {
             paused: true,
             gravity_constant: 1.0,
-            collision_substeps: 4,
+            collision_substeps: 1,
         }
     }
 }
