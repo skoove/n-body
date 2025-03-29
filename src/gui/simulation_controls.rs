@@ -20,8 +20,13 @@ fn sim_controls_gui(mut contexts: EguiContexts, mut sim_settings: ResMut<SimSett
             sim_settings.toggle_pause();
         }
         ui.add(
-            egui::Slider::new(&mut sim_settings.gravity_constant, 0.0..=100000.0)
+            egui::Slider::new(&mut sim_settings.gravity_constant, 0.0..=100.0)
                 .text("gravity constant"),
-        )
+        );
+
+        ui.add(
+            egui::Slider::new(&mut sim_settings.collision_substeps, 0..=16)
+                .text("collision substeps"),
+        );
     });
 }

@@ -1,3 +1,4 @@
+use bevy::color::Color;
 use bevy::prelude::*;
 use rand::prelude::*;
 use std::f32::consts::PI;
@@ -87,11 +88,12 @@ fn show_particles(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let material = MeshMaterial2d(materials.add(Color::hsv(0.0, 0.0, 1.0)));
     let mesh = meshes.add(Circle::new(1.0));
 
     for (entity, radius, mut transform) in query.iter_mut() {
         transform.scale = Vec3::splat(radius.0);
+        let material_handle = materials.add(ColorMaterial::from_color(Color::hsv(0.0, 0.0, 1.0)));
+        let material = MeshMaterial2d(material_handle);
         commands
             .entity(entity)
             .insert((Mesh2d(mesh.clone()), material.clone()));
@@ -99,7 +101,7 @@ fn show_particles(
 }
 
 fn spawn_random_particles(mut commands: Commands) {
-    let amount_to_spawn = 50;
+    let amount_to_spawn = 1000;
     let mut rng = rand::rng();
     for _ in 0..amount_to_spawn {
         let angle: f32 = rng.random_range(0.0..2.0 * PI);
@@ -109,9 +111,22 @@ fn spawn_random_particles(mut commands: Commands) {
         let y = radius * angle.sin();
         ParticleBundle::new()
             .position(Vec2::new(x, y))
-            .radius(5.0)
+            .radius(10.0)
             .velocity(Vec2::ZERO)
-            .mass(100.0)
+            .mass(10000.0)
             .spawn(&mut commands);
     }
+}
+
+pub fn set_color(
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+    handle: Handle<ColorMaterial>,
+    color: Color,
+) {
+    if let Some(material) = materials.get_mut(&handle) {
+        material.color = color;
+        debug!("setting to {:#?}", color)
+    } else {
+        error!("failed to find a material: {:?}", handle)
+    };
 }
