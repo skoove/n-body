@@ -24,7 +24,7 @@ pub struct Acceleration(pub Vec2);
 
 #[derive(Resource)]
 pub struct SimSettings {
-    paused: bool,
+    pub paused: bool,
 }
 
 impl Default for SimSettings {
