@@ -39,7 +39,7 @@ fn show_particles(
 }
 
 fn spawn_random_particles(mut commands: Commands) {
-    let amount_to_spawn = 1000;
+    let amount_to_spawn = 50;
     let mut rng = rand::rng();
     for _ in 0..amount_to_spawn {
         let angle: f32 = rng.random_range(0.0..2.0 * PI);

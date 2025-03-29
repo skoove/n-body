@@ -4,21 +4,48 @@ pub struct MotionPlugin;
 
 const G: f32 = 150000.0;
 
+impl Plugin for MotionPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, update_simulation)
+            .init_resource::<SimSettings>();
+    }
+}
+
 #[derive(Component)]
 pub struct OldPosition(pub Transform);
 
 #[derive(Component)]
 pub struct Acceleration(pub Vec2);
 
-impl Plugin for MotionPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, (calc_grav_accel, update_particle_positions).chain());
+#[derive(Resource)]
+pub struct SimSettings {
+    paused: bool,
+}
+
+impl Default for SimSettings {
+    fn default() -> Self {
+        SimSettings { paused: true }
+    }
+}
+
+#[allow(clippy::type_complexity)] // sorry clippy!
+fn update_simulation(
+    sim_settings: Res<SimSettings>,
+    mut queries: ParamSet<(
+        Query<(&mut Transform, &mut OldPosition, &Acceleration), With<Particle>>,
+        Query<(Entity, &mut Acceleration, &Mass, &Transform)>,
+    )>,
+    time: Res<Time>,
+) {
+    if !sim_settings.paused {
+        update_particle_positions(queries.p0(), &time);
+        calc_grav_accel(queries.p1(), &time);
     }
 }
 
 fn update_particle_positions(
     mut query: Query<(&mut Transform, &mut OldPosition, &Acceleration), With<Particle>>,
-    time: Res<Time>,
+    time: &Res<Time>,
 ) {
     query
         .par_iter_mut()
@@ -35,7 +62,7 @@ fn update_particle_positions(
 
 fn calc_grav_accel(
     mut query: Query<(Entity, &mut Acceleration, &Mass, &Transform)>,
-    time: Res<Time>,
+    time: &Res<Time>,
 ) {
     let delta_time = time.delta_secs();
 
