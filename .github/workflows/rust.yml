@@ -2,9 +2,7 @@ name: Rust
 
 on:
   push:
-    branches: [ "main", "verlet-integration" ]
   pull_request:
-    branches: [ "main", "verlet-integration"  ]
 
 env:
   CARGO_TERM_COLOR: always
