@@ -200,16 +200,59 @@ mod tests {
     }
 
     #[test]
-    fn test_particle_bundle_spawning() {
+    fn test_normal_particle_bundle_spawning() {
         use super::Particle;
         use bevy::prelude::*;
 
         let mut app = App::new();
-        app.world_mut().spawn(build_test_particle());
 
-        assert_eq!(
-            app.world_mut().query::<&Particle>().iter(app.world()).len(),
-            1
-        );
+        app.add_systems(Update, spawn);
+
+        fn spawn(mut commands: Commands) {
+            build_test_particle().spawn(&mut commands);
+        }
+
+        app.update();
+
+        let particle_count = app.world_mut().query::<&Particle>().iter(app.world()).len();
+        assert_eq!(particle_count, 1);
+    }
+
+    #[test]
+    fn test_negitive_radius_particle_bundle_spawning() {
+        use super::Particle;
+        use bevy::prelude::*;
+
+        let mut app = App::new();
+
+        app.add_systems(Update, spawn);
+
+        fn spawn(mut commands: Commands) {
+            build_test_particle().radius(-10.0).spawn(&mut commands);
+        }
+
+        app.update();
+
+        let particle_count = app.world_mut().query::<&Particle>().iter(app.world()).len();
+        assert_eq!(particle_count, 1);
+    }
+
+    #[test]
+    fn test_negitive_mass_particle_bundle_spawning() {
+        use super::Particle;
+        use bevy::prelude::*;
+
+        let mut app = App::new();
+
+        app.add_systems(Update, spawn);
+
+        fn spawn(mut commands: Commands) {
+            build_test_particle().mass(-10.0).spawn(&mut commands);
+        }
+
+        app.update();
+
+        let particle_count = app.world_mut().query::<&Particle>().iter(app.world()).len();
+        assert_eq!(particle_count, 1);
     }
 }
