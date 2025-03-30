@@ -1,7 +1,7 @@
 use crate::particle::{Particle, Radius};
 use bevy::prelude::*;
 
-use super::{motion::OldPosition, SimSettings};
+use super::SimSettings;
 
 pub fn calculate_collisions(
     mut particles: Query<(&mut Transform, &Radius), With<Particle>>,
