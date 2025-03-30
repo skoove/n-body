@@ -255,4 +255,22 @@ mod tests {
         let particle_count = app.world_mut().query::<&Particle>().iter(app.world()).len();
         assert_eq!(particle_count, 1);
     }
+
+    #[test]
+    fn test_set_color() {
+        use super::set_color;
+        use bevy::prelude::*;
+
+        let mut app = App::new();
+
+        app.add_systems(Update, update);
+        app.insert_resource(Assets::<ColorMaterial>::default());
+        app.update();
+
+        fn update(mut materials: ResMut<Assets<ColorMaterial>>) {
+            let handle = materials.add(ColorMaterial::from(Color::WHITE));
+            set_color(&mut materials, handle.clone(), Color::BLACK);
+            assert_eq!(materials.get(&handle).unwrap().color, Color::BLACK);
+        }
+    }
 }
