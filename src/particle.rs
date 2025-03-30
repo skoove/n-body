@@ -167,20 +167,27 @@ pub fn set_color(
 
 #[cfg(test)]
 mod tests {
+    fn build_test_particle() -> super::ParticleBundle {
+        use super::ParticleBundle;
+        use bevy::prelude::*;
+
+        ParticleBundle::new()
+            .position(Vec2::new(100.0, 200.0))
+            .velocity(Vec2::new(5.0, 10.0))
+            .radius(15.0)
+            .mass(500.0)
+            .color(Color::srgb(0.5, 0.5, 0.5))
+    }
+
     #[test]
     fn test_particle_bundle_builder() {
-        use super::ParticleBundle;
         use super::SpawnColor;
         use bevy::prelude::*;
 
         let pos = Vec2::new(100.0, 200.0);
         let velo = Vec2::new(5.0, 10.0);
-        let bundle = ParticleBundle::new()
-            .position(pos)
-            .velocity(velo)
-            .radius(15.0)
-            .mass(500.0)
-            .color(Color::srgb(0.5, 0.5, 0.5));
+
+        let bundle = build_test_particle();
 
         assert_eq!(bundle.position.translation, pos.extend(0.0));
         // old position should be position - velocity
@@ -190,5 +197,19 @@ mod tests {
         assert_eq!((bundle.mass).0, 500.0);
         let SpawnColor(col) = bundle.color;
         assert_eq!(col, Color::srgb(0.5, 0.5, 0.5));
+    }
+
+    #[test]
+    fn test_particle_bundle_spawning() {
+        use super::Particle;
+        use bevy::prelude::*;
+
+        let mut app = App::new();
+        app.world_mut().spawn(build_test_particle());
+
+        assert_eq!(
+            app.world_mut().query::<&Particle>().iter(app.world()).len(),
+            1
+        );
     }
 }
