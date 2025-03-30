@@ -9,7 +9,7 @@ pub struct MotionPlugin;
 impl Plugin for MotionPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            Update,
+            FixedUpdate,
             (
                 gravity::calc_grav_accel,
                 collisions::calculate_collisions,
@@ -17,7 +17,8 @@ impl Plugin for MotionPlugin {
             )
                 .chain()
                 .run_if(sim_not_paused),
-        );
+        )
+        .insert_resource(Time::<Fixed>::from_hz(60.0));
     }
 }
 
@@ -40,12 +41,14 @@ fn update_particle_positions(
         .par_iter_mut()
         .for_each(|(mut position, mut old_position, mut acceleration)| {
             let dt = time.delta_secs();
+            println!("{dt}");
             let velocity = position.translation - old_position.0.translation;
             old_position.0.translation = position.translation;
 
-            position.translation =
-                (position.translation.truncate() + velocity.truncate() + acceleration.0 * dt * dt)
-                    .extend(0.0);
+            position.translation = (position.translation.truncate()
+                + velocity.truncate() * dt
+                + acceleration.0 * dt * dt)
+                .extend(0.0);
             acceleration.0 = Vec2::ZERO;
         });
 }

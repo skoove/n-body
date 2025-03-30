@@ -8,11 +8,11 @@ pub fn calc_grav_accel(
     time: Res<Time>,
     sim_settings: Res<SimSettings>,
 ) {
-    let dt = time.delta_secs();
     let mut iter = query.iter_combinations_mut();
     while let Some([(mut accel_1, Mass(mass_1), pos_1), (mut accel_2, Mass(mass_2), pos_2)]) =
         iter.fetch_next()
     {
+        let dt = time.delta_secs();
         // a_a = (m_b/|r|^3) * r * dt * G
         let pos_1 = pos_1.translation;
         let pos_2 = pos_2.translation;
