@@ -105,7 +105,7 @@ fn spawn_random_particles(mut commands: Commands) {
     let mut rng = rand::rng();
     for _ in 0..amount_to_spawn {
         let angle: f32 = rng.random_range(0.0..2.0 * PI);
-        let radius: f32 = rng.random_range(100.0..1000.0);
+        let radius: f32 = rng.random_range(500.0..2000.0);
 
         let x = radius * angle.cos();
         let y = radius * angle.sin();
@@ -113,7 +113,7 @@ fn spawn_random_particles(mut commands: Commands) {
             .position(Vec2::new(x, y))
             .radius(10.0)
             .velocity(Vec2::ZERO)
-            .mass(10000.0)
+            .mass(2500000.0)
             .spawn(&mut commands);
     }
 }
