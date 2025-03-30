@@ -164,3 +164,31 @@ pub fn set_color(
         error!("failed to find a material: {:?}", handle)
     };
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_particle_bundle_builder() {
+        use super::ParticleBundle;
+        use super::SpawnColor;
+        use bevy::prelude::*;
+
+        let pos = Vec2::new(100.0, 200.0);
+        let velo = Vec2::new(5.0, 10.0);
+        let bundle = ParticleBundle::new()
+            .position(pos)
+            .velocity(velo)
+            .radius(15.0)
+            .mass(500.0)
+            .color(Color::srgb(0.5, 0.5, 0.5));
+
+        assert_eq!(bundle.position.translation, pos.extend(0.0));
+        // old position should be position - velocity
+        let expected_old = bundle.position.translation - velo.extend(0.0);
+        assert_eq!(bundle.old_position.0.translation, expected_old);
+        assert_eq!((bundle.radius).0, 15.0);
+        assert_eq!((bundle.mass).0, 500.0);
+        let SpawnColor(col) = bundle.color;
+        assert_eq!(col, Color::srgb(0.5, 0.5, 0.5));
+    }
+}
