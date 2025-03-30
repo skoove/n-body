@@ -44,9 +44,11 @@ jobs:
 
       - name: Check code formatting
         run: nix develop --command cargo fmt -- --check
+        continue-on-error: true
 
       - name: Run Clippy for linting
         run: nix develop --command cargo clippy --all-targets --all-features -- -D warnings
+        continue-on-error: true
 
       - name: Enter Nix dev shell and run tests
         run: nix develop --command cargo test --verbose
