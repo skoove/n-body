@@ -14,6 +14,8 @@ mod input;
 mod particle;
 mod simulation;
 
+const PHYSICS_UPDATE_HZ: f64 = 120.0;
+
 fn main() {
     App::new()
         .add_plugins(
@@ -21,9 +23,7 @@ fn main() {
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         title: "n-body".into(),
-                        mode: bevy::window::WindowMode::BorderlessFullscreen(
-                            MonitorSelection::Current,
-                        ),
+                        mode: bevy::window::WindowMode::Windowed,
                         cursor_options: CursorOptions {
                             visible: true,
                             ..Default::default()

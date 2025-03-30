@@ -3,7 +3,7 @@ use bevy_egui::EguiPlugin;
 use performance_gui::PreformanceGuiPlugin;
 use simulation_controls::SimulationControlsGuiPlugin;
 
-mod performance_gui;
+pub mod performance_gui;
 mod simulation_controls;
 
 pub struct GuiPlugin;

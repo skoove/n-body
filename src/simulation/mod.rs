@@ -1,3 +1,4 @@
+use crate::gui::performance_gui::PerformanceData;
 use bevy::prelude::*;
 use motion::MotionPlugin;
 pub mod collisions;
@@ -24,9 +25,9 @@ impl Default for SimSettings {
     fn default() -> Self {
         SimSettings {
             paused: true,
-            gravity_constant: 1.0,
-            collision_substeps: 1,
-            enable_collisions: true,
+            gravity_constant: 500.0,
+            collision_substeps: 2,
+            enable_collisions: false,
         }
     }
 }
@@ -36,4 +37,8 @@ impl SimSettings {
         self.paused = !self.paused;
         info!("toggle pause")
     }
+}
+
+fn collect_perfromance_data(mut perf_data: ResMut<PerformanceData>, time: Res<Time<Virtual>>) {
+    perf_data.simulation_time.push_back(time.delta_secs());
 }

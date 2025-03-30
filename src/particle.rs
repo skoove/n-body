@@ -10,7 +10,8 @@ pub struct ParticlePlugin;
 
 impl Plugin for ParticlePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (spawn_random_particles, show_particles).chain());
+        app.add_systems(Startup, spawn_random_particles)
+            .add_systems(Update, show_particles);
     }
 }
 
@@ -23,6 +24,10 @@ pub struct Radius(pub f32);
 #[derive(Component)]
 pub struct Mass(pub f32);
 
+/// The color **at spawn** of an entity. To change color use [`set_color()`]
+#[derive(Component)]
+pub struct SpawnColor(bevy::color::Color);
+
 #[derive(Bundle)]
 pub struct ParticleBundle {
     particle: Particle,
@@ -31,6 +36,7 @@ pub struct ParticleBundle {
     position: Transform,
     old_position: OldPosition,
     acceleration: Acceleration,
+    color: SpawnColor,
 }
 
 impl ParticleBundle {
@@ -42,6 +48,7 @@ impl ParticleBundle {
             position: Transform::from_xyz(0.0, 0.0, 0.0),
             old_position: OldPosition(Transform::from_xyz(0.0, 0.0, 0.0)),
             acceleration: Acceleration(Vec2::ZERO),
+            color: SpawnColor(Color::hsv(0.0, 0.0, 1.00)),
         }
     }
 
@@ -54,10 +61,11 @@ impl ParticleBundle {
             position: self.position,
             old_position: self.old_position,
             acceleration: self.acceleration,
+            color: self.color,
         });
     }
 
-    /// Set the radius of the spawned particle (visual only)
+    /// Set the radius of the spawned particle
     pub fn radius(mut self, radius: f32) -> Self {
         self.radius = Radius(radius);
         self
@@ -80,19 +88,33 @@ impl ParticleBundle {
         self.old_position.0.translation = self.position.translation - velo.extend(0.0);
         self
     }
+
+    /// Set the color of the spawned particle
+    pub fn color(mut self, color: Color) -> Self {
+        self.color = SpawnColor(color);
+        self
+    }
 }
 
+#[allow(clippy::type_complexity)] // sorry clippy i kinda need it
 fn show_particles(
     mut commands: Commands,
-    mut query: Query<(Entity, &Radius, &mut Transform), With<Particle>>,
+    mut query: Query<
+        (Entity, &Radius, &mut Transform, &SpawnColor),
+        (
+            With<Particle>,
+            Without<MeshMaterial2d<ColorMaterial>>,
+            Without<Mesh2d>,
+        ),
+    >,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let mesh = meshes.add(Circle::new(1.0));
 
-    for (entity, radius, mut transform) in query.iter_mut() {
+    for (entity, radius, mut transform, SpawnColor(color)) in query.iter_mut() {
         transform.scale = Vec3::splat(radius.0);
-        let material_handle = materials.add(ColorMaterial::from_color(Color::hsv(0.0, 0.0, 1.0)));
+        let material_handle = materials.add(ColorMaterial::from_color(*color));
         let material = MeshMaterial2d(material_handle);
         commands
             .entity(entity)
@@ -103,21 +125,33 @@ fn show_particles(
 fn spawn_random_particles(mut commands: Commands) {
     let amount_to_spawn = 500;
     let mut rng = rand::rng();
-    for _ in 0..amount_to_spawn {
+    for i in 0..amount_to_spawn {
         let angle: f32 = rng.random_range(0.0..2.0 * PI);
         let radius: f32 = rng.random_range(500.0..2000.0);
 
+        let velo_range = -5.0..5.0;
+        let velo_x: f32 = rng.random_range(velo_range.clone());
+        let velo_y: f32 = rng.random_range(velo_range.clone());
+        let velo: Vec2 = Vec2::new(velo_x, velo_y);
+
         let x = radius * angle.cos();
         let y = radius * angle.sin();
+        let pos = Vec2::new(x, y);
         ParticleBundle::new()
-            .position(Vec2::new(x, y))
+            .position(pos)
             .radius(10.0)
-            .velocity(Vec2::ZERO)
-            .mass(2500000.0)
+            .velocity(velo)
+            .mass(1000.0)
+            .color(Color::hsv(
+                (i as f32 / amount_to_spawn as f32) * 30.0,
+                1.0,
+                1.0,
+            ))
             .spawn(&mut commands);
     }
 }
 
+/// Set the colour of a given [ColorMaterial]
 pub fn set_color(
     materials: &mut ResMut<Assets<ColorMaterial>>,
     handle: Handle<ColorMaterial>,
