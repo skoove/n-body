@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::{any::Any, collections::VecDeque};
 
 use bevy::prelude::*;
 use bevy_egui::{
@@ -37,7 +37,12 @@ fn performance_gui(
     mut contexts: EguiContexts,
     mut performance_data: ResMut<PerformanceData>,
     mut gui_settings: ResMut<PerformanceGuiSettings>,
+    time: Res<Time>,
 ) {
+    performance_data
+        .frame_time
+        .push_back(time.delta_secs() * 1000.0);
+
     while performance_data.frame_time.len() > gui_settings.history_to_show as usize {
         performance_data.frame_time.pop_front();
     }
@@ -50,7 +55,7 @@ fn performance_gui(
         performance_data.frame_time.iter().sum::<f32>() / performance_data.frame_time.len() as f32;
 
     let average_sim_time: f32 = performance_data.simulation_time.iter().sum::<f32>()
-        / performance_data.frame_time.len() as f32;
+        / performance_data.simulation_time.len() as f32;
 
     egui::Window::new("performance").show(contexts.ctx_mut(), |ui| {
         let frame_time_plot: PlotPoints = performance_data
@@ -62,7 +67,10 @@ fn performance_gui(
 
         ui.label(format!(
             "frametime: {:.1}ms",
-            performance_data.frame_time[0]
+            performance_data
+                .frame_time
+                .back()
+                .expect("there was no preformance data!")
         ));
         ui.label(format!("average frametime: {:.1}ms", average_frame_time));
         ui.label("frame time plot");
@@ -75,7 +83,6 @@ fn performance_gui(
             .show_x(false)
             .set_margin_fraction(egui::Vec2::new(0.0, 0.0))
             .include_x(0.0)
-            .include_y(20.0)
             .x_axis_label("frame")
             .show(ui, |plot_fn| plot_fn.line(Line::new(frame_time_plot)));
 
@@ -97,7 +104,7 @@ fn performance_gui(
             .show_x(false)
             .set_margin_fraction(egui::Vec2::new(0.0, 0.0))
             .include_x(0.0)
-            .include_y(20.0)
+            .include_y(0.0)
             .x_axis_label("frame")
             .show(ui, |plot_fn| plot_fn.line(Line::new(simulation_time_plot)));
 

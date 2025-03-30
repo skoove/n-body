@@ -40,5 +40,7 @@ impl SimSettings {
 }
 
 fn collect_perfromance_data(mut perf_data: ResMut<PerformanceData>, time: Res<Time<Virtual>>) {
-    perf_data.simulation_time.push_back(time.delta_secs());
+    perf_data
+        .simulation_time
+        .push_back(time.delta_secs() * 1000.0);
 }
