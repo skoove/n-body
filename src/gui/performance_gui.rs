@@ -1,4 +1,4 @@
-use std::{any::Any, collections::VecDeque};
+use std::collections::VecDeque;
 
 use bevy::prelude::*;
 use bevy_egui::{
