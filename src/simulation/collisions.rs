@@ -1,12 +1,15 @@
 use crate::particle::{Particle, Radius};
 use bevy::prelude::*;
 
-use super::SimSettings;
+use super::{motion::OldPosition, SimSettings};
 
 pub fn calculate_collisions(
     mut particles: Query<(&mut Transform, &Radius), With<Particle>>,
     sim_settings: Res<SimSettings>,
 ) {
+    if !sim_settings.enable_collisions {
+        return;
+    }
     for _ in 0..sim_settings.collision_substeps {
         let mut iter = particles.iter_combinations_mut();
         while let Some([(mut pos1, Radius(radius1)), (mut pos2, Radius(radius2))]) =

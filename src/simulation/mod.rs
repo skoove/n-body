@@ -17,6 +17,7 @@ pub struct SimSettings {
     pub paused: bool,
     pub gravity_constant: f32,
     pub collision_substeps: i32,
+    pub enable_collisions: bool,
 }
 
 impl Default for SimSettings {
@@ -25,6 +26,7 @@ impl Default for SimSettings {
             paused: true,
             gravity_constant: 1.0,
             collision_substeps: 1,
+            enable_collisions: true,
         }
     }
 }

@@ -27,9 +27,12 @@ fn sim_controls_gui(mut contexts: EguiContexts, mut sim_settings: ResMut<SimSett
         );
 
         // collision substeps
-        ui.add(
-            egui::Slider::new(&mut sim_settings.collision_substeps, 1..=16)
-                .text("collision substeps"),
-        );
+        ui.checkbox(&mut sim_settings.enable_collisions, "enable collisions");
+        if sim_settings.enable_collisions {
+            ui.add(
+                egui::Slider::new(&mut sim_settings.collision_substeps, 1..=16)
+                    .text("collision substeps"),
+            );
+        }
     });
 }

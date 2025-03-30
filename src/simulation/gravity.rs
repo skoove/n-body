@@ -24,8 +24,8 @@ pub fn calc_grav_accel(
         let distance = distance_sq.sqrt();
         let distance_cubed = distance * distance * distance;
         accel_1.0 +=
-            (((sim_settings.gravity_constant * mass_2) / (distance_cubed)) * delta).truncate();
+            (((sim_settings.gravity_constant * mass_2) / (distance_cubed)) * delta * dt).truncate();
         accel_2.0 -=
-            (((sim_settings.gravity_constant * mass_1) / (distance_cubed)) * delta).truncate();
+            (((sim_settings.gravity_constant * mass_1) / (distance_cubed)) * delta * dt).truncate();
     }
 }
