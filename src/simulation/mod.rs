@@ -1,6 +1,5 @@
-use crate::gui::performance_gui::PerformanceData;
+use crate::{gui::performance_gui::PerformanceData, PHYSICS_UPDATE_HZ};
 use bevy::prelude::*;
-use motion::MotionPlugin;
 pub mod collisions;
 pub mod gravity;
 pub mod motion;
@@ -9,8 +8,25 @@ pub struct SimPlugin;
 
 impl Plugin for SimPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(MotionPlugin).init_resource::<SimSettings>();
+        app.add_systems(
+            FixedUpdate,
+            (
+                gravity::calc_grav_accel,
+                collisions::calculate_collisions,
+                motion::update_particle_positions,
+                collect_perfromance_data,
+            )
+                .chain()
+                .run_if(sim_not_paused),
+        )
+        .insert_resource(Time::<Fixed>::from_hz(PHYSICS_UPDATE_HZ))
+        .init_resource::<SimSettings>();
     }
+}
+
+/// returns true if the simulation is not paused
+fn sim_not_paused(settings: Res<SimSettings>) -> bool {
+    !settings.paused
 }
 
 #[derive(Resource)]
