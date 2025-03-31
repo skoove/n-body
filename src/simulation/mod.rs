@@ -14,7 +14,6 @@ impl Plugin for SimPlugin {
                 gravity::calc_grav_accel,
                 collisions::calculate_collisions,
                 motion::update_particle_positions,
-                collect_perfromance_data,
             )
                 .chain()
                 .run_if(sim_not_paused),
@@ -53,10 +52,4 @@ impl SimSettings {
         self.paused = !self.paused;
         info!("toggle pause")
     }
-}
-
-fn collect_perfromance_data(mut perf_data: ResMut<PerformanceData>, time: Res<Time<Virtual>>) {
-    perf_data
-        .simulation_time
-        .push_back(time.delta_secs() * 1000.0);
 }
