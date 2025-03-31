@@ -10,23 +10,13 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Install Nix
         uses: cachix/install-nix-action@v27
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
-
-      - name: Cache Nix store
-        uses: actions/cache@v4
-        with:
-          path: /nix/store
-          key: nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}
-          restore-keys: |
-            nix-${{ runner.os }}-
 
       - name: Cache Cargo dependencies
         uses: actions/cache@v4
@@ -42,11 +32,74 @@ jobs:
       - name: Enter Nix dev shell and build
         run: nix develop --command cargo build --verbose
 
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-
+
       - name: Enter Nix dev shell and run tests
         run: nix develop --command cargo test --verbose
 
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-
+
       - name: Check code formatting
         run: nix develop --command cargo fmt -- --check
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-
 
       - name: Run Clippy for linting
         run: nix develop --command cargo clippy --all-targets --all-features -- -D warnings
