@@ -19,6 +19,7 @@
       libxkbcommon
       vulkan-loader
       rustfmt
+      mold
       rustc
     ];
   in {
