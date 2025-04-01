@@ -1,26 +1,16 @@
-use bevy::math::VectorSpace;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 
-use crate::camera::{self, CursorWorldCoords};
+use crate::camera::{self};
 use crate::particle::ParticleBundle;
 
 pub struct ToolsGuiPlugin;
 
 impl Plugin for ToolsGuiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            (
-                tools_gui,
-                tool_just_released,
-                tool_just_pressed,
-                tool_drag,
-                tool_not_pressed,
-            ),
-        )
-        .init_resource::<Tool>()
-        .init_resource::<ToolSettings>();
+        app.add_systems(Update, (tools_gui, tool_behaviours))
+            .init_resource::<Tool>()
+            .init_resource::<ToolSettings>();
     }
 }
 
@@ -122,13 +112,15 @@ fn spawn_particle_gui(ui: &mut egui::Ui, mut settings: ResMut<ToolSettings>) {
 }
 
 /// things done when the left mouse button is released
-fn tool_just_released(
+fn tool_behaviours(
     mut commands: Commands,
     selected_tool: Res<Tool>,
     mut settings: ResMut<ToolSettings>,
     inputs: Res<ButtonInput<MouseButton>>,
     cursor_coords: Res<camera::CursorWorldCoords>,
+    mut gizmos: Gizmos,
 ) {
+    // for when the button is released, useually exectutes the function of the tool
     if inputs.just_released(MouseButton::Left) {
         match *selected_tool {
             Tool::SpawnParticle => {
@@ -146,15 +138,8 @@ fn tool_just_released(
             Tool::Repel => todo!(),
         };
     };
-}
 
-/// things done on the frame that the left mouse button is pressed
-fn tool_just_pressed(
-    selected_tool: Res<Tool>,
-    mut settings: ResMut<ToolSettings>,
-    inputs: Res<ButtonInput<MouseButton>>,
-    cursor_coords: Res<camera::CursorWorldCoords>,
-) {
+    // for when the button has just been pressed, probably unused on most things
     if inputs.just_pressed(MouseButton::Left) {
         match *selected_tool {
             Tool::SpawnParticle => {
@@ -164,18 +149,10 @@ fn tool_just_pressed(
             Tool::SpawnHose => todo!(),
             Tool::Attract => todo!(),
             Tool::Repel => todo!(),
-        }
-    }
-}
+        };
+    };
 
-/// things done if the left mouse button is down
-fn tool_drag(
-    selected_tool: Res<Tool>,
-    mut settings: ResMut<ToolSettings>,
-    inputs: Res<ButtonInput<MouseButton>>,
-    cursor_coords: Res<camera::CursorWorldCoords>,
-    mut gizmos: Gizmos,
-) {
+    // for when the button is held down, probably unused on most things
     if inputs.pressed(MouseButton::Left) {
         match *selected_tool {
             Tool::SpawnParticle => {
@@ -194,18 +171,10 @@ fn tool_drag(
             Tool::SpawnHose => todo!(),
             Tool::Attract => todo!(),
             Tool::Repel => todo!(),
-        }
-    }
-}
+        };
+    };
 
-/// things done any time there is no input other than mouse movement
-fn tool_not_pressed(
-    selected_tool: Res<Tool>,
-    inputs: Res<ButtonInput<MouseButton>>,
-    settings: Res<ToolSettings>,
-    cursor_coords: Res<camera::CursorWorldCoords>,
-    mut gizmos: Gizmos,
-) {
+    // for when the button is not pressed but the tool is selected, for stuff like previews
     if !inputs.pressed(MouseButton::Left) {
         match *selected_tool {
             Tool::SpawnParticle => {
@@ -221,6 +190,6 @@ fn tool_not_pressed(
             Tool::SpawnHose => todo!(),
             Tool::Attract => todo!(),
             Tool::Repel => todo!(),
-        }
-    }
+        };
+    };
 }
