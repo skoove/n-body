@@ -1,5 +1,7 @@
-use crate::{gui::performance_gui::PerformanceData, PHYSICS_UPDATE_HZ};
+use crate::PHYSICS_UPDATE_HZ;
+
 use bevy::prelude::*;
+
 pub mod collisions;
 pub mod gravity;
 pub mod motion;

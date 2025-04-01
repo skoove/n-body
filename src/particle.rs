@@ -152,6 +152,7 @@ fn spawn_random_particles(mut commands: Commands) {
 }
 
 /// Set the colour of a given [ColorMaterial]
+#[allow(dead_code)] // it will definitly be used at some point
 pub fn set_color(
     materials: &mut ResMut<Assets<ColorMaterial>>,
     handle: Handle<ColorMaterial>,
