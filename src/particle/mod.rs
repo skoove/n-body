@@ -81,7 +81,9 @@ impl ParticleBundle {
     /// Set the starting position of the spawned particle
     /// default: 0.0 , 0.0
     pub fn position(mut self, pos: Vec2) -> Self {
-        self.position = Transform::from_translation(pos.extend(0.0));
+        let transform = Transform::from_translation(pos.extend(0.0));
+        self.position = transform;
+        self.old_position = OldPosition(transform);
         self
     }
 
