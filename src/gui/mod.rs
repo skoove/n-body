@@ -3,10 +3,12 @@ use bevy_egui::EguiPlugin;
 use performance_gui::PreformanceGuiPlugin;
 use simulation_controls::SimulationControlsGuiPlugin;
 use tools::ToolsGuiPlugin;
+use views::ViewsPlugin;
 
 pub mod performance_gui;
 mod simulation_controls;
 mod tools;
+mod views;
 
 pub struct GuiPlugin;
 
@@ -17,6 +19,7 @@ impl Plugin for GuiPlugin {
             PreformanceGuiPlugin,
             SimulationControlsGuiPlugin,
             ToolsGuiPlugin,
+            ViewsPlugin,
         ))
         .add_systems(
             PreUpdate,
