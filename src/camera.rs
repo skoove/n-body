@@ -1,4 +1,7 @@
-use bevy::input::mouse::{MouseMotion, MouseWheel};
+use bevy::{
+    input::mouse::{MouseMotion, MouseWheel},
+    window::PrimaryWindow,
+};
 
 use crate::*;
 
@@ -6,18 +9,19 @@ const ZOOM_SENSITIVITY: f32 = 0.1;
 
 pub struct CameraPlugin;
 
-#[derive(Component)]
-struct Camera;
-
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_camera);
-        app.add_systems(Update, (zoom_camera, pan_camera));
+        app.add_systems(Update, (zoom_camera, pan_camera, get_world_coords));
+        app.init_resource::<CursorWorldCoords>();
     }
 }
 
+#[derive(Resource, Default)]
+pub struct CursorWorldCoords(pub Vec2);
+
 fn setup_camera(mut commands: Commands) {
-    commands.spawn((Camera, Camera2d, Transform::default()));
+    commands.spawn((Camera2d, Transform::default()));
 }
 
 fn zoom_camera(
@@ -32,7 +36,7 @@ fn zoom_camera(
 }
 
 fn pan_camera(
-    mut cam_q: Query<(&mut Transform, &OrthographicProjection), With<Camera>>,
+    mut cam_q: Query<(&mut Transform, &OrthographicProjection), With<Camera2d>>,
     mut mouse_movement_events: EventReader<MouseMotion>,
     mouse_button_events: Res<ButtonInput<MouseButton>>,
 ) {
@@ -44,5 +48,31 @@ fn pan_camera(
                 + (event.delta.with_x(-event.delta.x) * projection.scale);
             camera_transform.translation = new_pos.extend(0.0);
         }
+    }
+}
+
+/// stolen from <https://bevy-cheatbook.github.io/cookbook/cursor2world.html>
+fn get_world_coords(
+    mut mycoords: ResMut<CursorWorldCoords>,
+    // query to get the window (so we can read the current cursor position)
+    q_window: Query<&Window, With<PrimaryWindow>>,
+    // query to get camera transform
+    q_camera: Query<(&Camera, &GlobalTransform), With<Camera2d>>,
+) {
+    // get the camera info and transform
+    // assuming there is exactly one main camera entity, so Query::single() is OK
+    let (camera, camera_transform) = q_camera.single();
+
+    // There is only one primary window, so we can similarly get it from the query:
+    let window = q_window.single();
+
+    // check if the cursor is inside the window and get its position
+    // then, ask bevy to convert into world coordinates, and truncate to discard Z
+    if let Some(world_position) = window
+        .cursor_position()
+        .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor).ok())
+        .map(|ray| ray.origin.truncate())
+    {
+        mycoords.0 = world_position;
     }
 }

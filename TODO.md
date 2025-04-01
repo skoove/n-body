@@ -5,24 +5,20 @@
     avalible settings and the behaviour of clicking on the scene
   - [ ] rewrite the random spawning function
     - [ ] spawn *evenly* in radius around center
-    - [ ] spawn with colors
-    - [ ] spawn with randomised colors
     - [ ] customise radius
     - [ ] customise center point
     - [ ] make sure particles do not overlap when spawned
   - [ ] add a particle stream spawner
     - spawn a stream of particles over time
     - [ ] cutomisable spawnrate
-    - [ ] spawn with color
     - [ ] spawn with gradient of colors, changing over time as more are spawned
     - [ ] set velocity
     - [ ] set amount to be spawned, until they stop spawning
-  - [ ] add a single particle spawner
+  - [x] add a single particle spawner
     - this can just use the existing `ParticleBundle` builder, im happy with that
-    - [ ] customise mass
-    - [ ] velocity
+    - [x] customise mass
+    - [x] customise radius
+    - [x] velocity
       - this should be done by clicking and dragging
-    - [ ] position
+    - [x] position
       - this should be done by just clicking
-    - [ ] color
-      - color picker on tool panel
