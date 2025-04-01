@@ -21,6 +21,8 @@ fn sim_controls_gui(
     mut sim_settings: ResMut<SimSettings>,
     mut virtual_time: ResMut<Time<Virtual>>,
     mut max_delta: ResMut<MaxDelta>,
+    commands: Commands,
+    particles: Query<Entity, With<particle::Particle>>,
     particle_count: Res<particle::ParticleCount>,
 ) {
     egui::Window::new("simulation controls").show(contexts.ctx_mut(), |ui| {
@@ -32,7 +34,12 @@ fn sim_controls_gui(
             sim_settings.toggle_pause();
         }
 
-        ui.label(format!("particles: {}", particle_count.0));
+        ui.horizontal(|ui| {
+            ui.label(format!("particles: {}", particle_count.0));
+            if ui.button("despawn particles").clicked() {
+                particle::despawn_particles(commands, particles);
+            };
+        });
 
         ui.add(
             egui::Slider::new(&mut max_delta.0, 10..=100)

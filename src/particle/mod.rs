@@ -152,6 +152,12 @@ fn count_particles(particles: Query<&Particle>, mut particle_count: ResMut<Parti
     particle_count.0 = particles.iter().count();
 }
 
+pub fn despawn_particles(mut commands: Commands, particles: Query<Entity, With<Particle>>) {
+    for entity in particles.iter() {
+        commands.entity(entity).despawn();
+    }
+}
+
 #[cfg(test)]
 mod tests {
     fn build_test_particle() -> super::ParticleBundle {
@@ -259,5 +265,28 @@ mod tests {
             set_color(&mut materials, handle.clone(), Color::BLACK);
             assert_eq!(materials.get(&handle).unwrap().color, Color::BLACK);
         }
+    }
+
+    #[test]
+    fn test_particle_despawn() {
+        use super::Particle;
+        use bevy::prelude::*;
+
+        let mut app = App::new();
+
+        app.add_systems(Update, (spawn, despawn).chain());
+
+        fn spawn(mut commands: Commands) {
+            build_test_particle().spawn(&mut commands);
+        }
+
+        fn despawn(commands: Commands, particles: Query<Entity, With<Particle>>) {
+            super::despawn_particles(commands, particles);
+        }
+
+        app.update();
+
+        let particle_count = app.world_mut().query::<&Particle>().iter(app.world()).len();
+        assert_eq!(particle_count, 0);
     }
 }
