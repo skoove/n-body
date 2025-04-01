@@ -2,9 +2,11 @@ use bevy::{input::mouse::MouseWheel, prelude::*};
 use bevy_egui::EguiPlugin;
 use performance_gui::PreformanceGuiPlugin;
 use simulation_controls::SimulationControlsGuiPlugin;
+use tools::ToolsGuiPlugin;
 
 pub mod performance_gui;
 mod simulation_controls;
+mod tools;
 
 pub struct GuiPlugin;
 
@@ -14,6 +16,7 @@ impl Plugin for GuiPlugin {
             EguiPlugin,
             PreformanceGuiPlugin,
             SimulationControlsGuiPlugin,
+            ToolsGuiPlugin,
         ))
         .add_systems(
             PreUpdate,
