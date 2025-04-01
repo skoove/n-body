@@ -10,7 +10,8 @@ pub struct ParticlePlugin;
 
 impl Plugin for ParticlePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, show_particles);
+        app.add_systems(Update, (show_particles, count_particles))
+            .init_resource::<ParticleCount>();
     }
 }
 
@@ -96,6 +97,7 @@ impl ParticleBundle {
 
     /// Set the color of the spawned particle
     /// default: white
+    #[allow(dead_code)]
     pub fn color(mut self, color: Color) -> Self {
         self.color = SpawnColor(color);
         self
@@ -141,6 +143,13 @@ pub fn set_color(
     } else {
         error!("failed to find a material: {:?}", handle)
     };
+}
+
+#[derive(Resource, Default)]
+pub struct ParticleCount(pub usize);
+
+fn count_particles(particles: Query<&Particle>, mut particle_count: ResMut<ParticleCount>) {
+    particle_count.0 = particles.iter().count();
 }
 
 #[cfg(test)]
