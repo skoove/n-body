@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::simulation::SimSettings;
+use crate::{particle, simulation::SimSettings};
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 
@@ -21,6 +21,7 @@ fn sim_controls_gui(
     mut sim_settings: ResMut<SimSettings>,
     mut virtual_time: ResMut<Time<Virtual>>,
     mut max_delta: ResMut<MaxDelta>,
+    particle_count: Res<particle::ParticleCount>,
 ) {
     egui::Window::new("simulation controls").show(contexts.ctx_mut(), |ui| {
         if sim_settings.paused {
@@ -30,6 +31,8 @@ fn sim_controls_gui(
         } else if ui.button("pause").clicked() {
             sim_settings.toggle_pause();
         }
+
+        ui.label(format!("particles: {}", particle_count.0));
 
         ui.add(
             egui::Slider::new(&mut max_delta.0, 10..=100)
