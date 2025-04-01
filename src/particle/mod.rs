@@ -1,17 +1,16 @@
 use bevy::color::Color;
 use bevy::prelude::*;
-use rand::prelude::*;
-use std::f32::consts::PI;
 
 use crate::simulation::motion::Acceleration;
 use crate::simulation::motion::OldPosition;
+
+mod spawners;
 
 pub struct ParticlePlugin;
 
 impl Plugin for ParticlePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_random_particles)
-            .add_systems(Update, show_particles);
+        app.add_systems(Update, show_particles);
     }
 }
 
@@ -66,30 +65,35 @@ impl ParticleBundle {
     }
 
     /// Set the radius of the spawned particle
+    /// default: 1.0
     pub fn radius(mut self, radius: f32) -> Self {
         self.radius = Radius(radius);
         self
     }
 
     /// Set the mass of the spawned particle
+    /// default: 1.0
     pub fn mass(mut self, mass: f32) -> Self {
         self.mass = Mass(mass);
         self
     }
 
     /// Set the starting position of the spawned particle
+    /// default: 0.0 , 0.0
     pub fn position(mut self, pos: Vec2) -> Self {
         self.position = Transform::from_translation(pos.extend(0.0));
         self
     }
 
     /// Set velocity of the spawned particle, set this after position
+    /// default: 0.0 , 0.0
     pub fn velocity(mut self, velo: Vec2) -> Self {
         self.old_position.0.translation = self.position.translation - velo.extend(0.0);
         self
     }
 
     /// Set the color of the spawned particle
+    /// default: white
     pub fn color(mut self, color: Color) -> Self {
         self.color = SpawnColor(color);
         self
@@ -119,35 +123,6 @@ fn show_particles(
         commands
             .entity(entity)
             .insert((Mesh2d(mesh.clone()), material.clone()));
-    }
-}
-
-fn spawn_random_particles(mut commands: Commands) {
-    let amount_to_spawn = 500;
-    let mut rng = rand::rng();
-    for i in 0..amount_to_spawn {
-        let angle: f32 = rng.random_range(0.0..2.0 * PI);
-        let radius: f32 = rng.random_range(500.0..2000.0);
-
-        let velo_range = -5.0..5.0;
-        let velo_x: f32 = rng.random_range(velo_range.clone());
-        let velo_y: f32 = rng.random_range(velo_range.clone());
-        let velo: Vec2 = Vec2::new(velo_x, velo_y);
-
-        let x = radius * angle.cos();
-        let y = radius * angle.sin();
-        let pos = Vec2::new(x, y);
-        ParticleBundle::new()
-            .position(pos)
-            .radius(10.0)
-            .velocity(velo)
-            .mass(1000.0)
-            .color(Color::hsv(
-                (i as f32 / amount_to_spawn as f32) * 30.0,
-                1.0,
-                1.0,
-            ))
-            .spawn(&mut commands);
     }
 }
 
