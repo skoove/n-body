@@ -3,11 +3,9 @@
   - during run time these tools would be accesed with a new egui window with a
     dropdwon menu for selecting the tools, the tool selection will change the
     avalible settings and the behaviour of clicking on the scene
-  - [ ] rewrite the random spawning function
-    - [ ] spawn *evenly* in radius around center
-    - [ ] customise radius
-    - [ ] customise center point
-    - [ ] make sure particles do not overlap when spawned
+  - [x] rewrite the random spawning function
+    - [x] customise radius
+    - [x] customise center point
   - [ ] add a particle stream spawner
     - spawn a stream of particles over time
     - [ ] cutomisable spawnrate

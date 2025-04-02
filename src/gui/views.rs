@@ -51,13 +51,11 @@ fn render_velocity_arrows(
         let old_position = old_pos.translation.truncate();
         let velocity = current_position - old_position;
 
-        gizmos
-            .arrow_2d(
-                current_position,
-                current_position + velocity * 10.0,
-                Color::hsv(0.0, 0.5, 1.0),
-            )
-            .with_tip_length(10.0);
+        gizmos.arrow_2d(
+            current_position,
+            current_position + velocity * 10.0,
+            Color::hsv(0.0, 0.5, 1.0),
+        );
     }
 }
 
@@ -72,12 +70,10 @@ fn render_acceleration_arrows(
     for (pos, PreviousAcceleration(acceleration)) in particles.iter() {
         let position = pos.translation.truncate();
         let arrow_length = acceleration.length().powf(0.3) * 10.0;
-        gizmos
-            .arrow_2d(
-                position,
-                position + acceleration.normalize_or_zero() * arrow_length,
-                Color::hsv(60.0, 0.5, 1.0),
-            )
-            .with_tip_length(10.0);
+        gizmos.arrow_2d(
+            position,
+            position + acceleration.normalize_or_zero() * arrow_length,
+            Color::hsv(60.0, 0.5, 1.0),
+        );
     }
 }

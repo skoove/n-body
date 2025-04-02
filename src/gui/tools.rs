@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 
 use crate::camera::{self};
-use crate::particle::ParticleBundle;
+use crate::particle::{spawners, ParticleBundle};
 
 pub struct ToolsGuiPlugin;
 
@@ -29,6 +29,12 @@ struct ToolSettings {
     radius: f32,
     velocity: Vec2,
     position: Vec2,
+
+    inner_radius: f32,
+    outer_radius: f32,
+    amount_to_spawn: f32,
+    scalar_velocity: f32,
+    value_variation: bool,
 }
 
 impl Default for ToolSettings {
@@ -38,6 +44,12 @@ impl Default for ToolSettings {
             radius: 10.0,
             velocity: Vec2::ZERO,
             position: Vec2::ZERO,
+
+            inner_radius: 0.0,
+            outer_radius: 100.0,
+            amount_to_spawn: 100.0,
+            scalar_velocity: 0.0,
+            value_variation: false,
         }
     }
 }
@@ -90,7 +102,7 @@ fn tools_gui(mut contexts: EguiContexts, mut tool: ResMut<Tool>, settings: ResMu
             });
         match *tool {
             Tool::SpawnParticle => spawn_particle_gui(ui, settings),
-            Tool::SpawnRandom => todo!(),
+            Tool::SpawnRandom => spawn_random_gui(ui, settings),
             Tool::SpawnHose => todo!(),
             Tool::Attract => todo!(),
             Tool::Repel => todo!(),
@@ -98,17 +110,99 @@ fn tools_gui(mut contexts: EguiContexts, mut tool: ResMut<Tool>, settings: ResMu
     });
 }
 
+fn drag_value_with_multiply_buttons(
+    ui: &mut egui::Ui,
+    value: &mut f32,
+    speed: f32,
+    label: &str,
+    hover_text: &str,
+) {
+    ui.horizontal(|ui| {
+        ui.label(label);
+        ui.add(egui::DragValue::new(value).speed(speed))
+            .on_hover_text_at_pointer(hover_text);
+        ui.separator();
+        if ui.button("x0.01").clicked() {
+            *value *= 0.01;
+        }
+        if ui.button("x0.1").clicked() {
+            *value *= 0.1;
+        }
+        if ui.button("x10").clicked() {
+            *value *= 10.0;
+        }
+        if ui.button("x100").clicked() {
+            *value *= 100.0;
+        }
+    });
+}
+
 fn spawn_particle_gui(ui: &mut egui::Ui, mut settings: ResMut<ToolSettings>) {
-    ui.horizontal(|ui| {
-        ui.label("mass:");
-        ui.add(egui::DragValue::new(&mut settings.mass).speed(50.0))
-            .on_hover_text_at_pointer("the mass of the spawned particle")
-    });
-    ui.horizontal(|ui| {
-        ui.label("radius:");
-        ui.add(egui::DragValue::new(&mut settings.radius))
-            .on_hover_text_at_pointer("the radius of the spawned particle")
-    });
+    drag_value_with_multiply_buttons(
+        ui,
+        &mut settings.mass,
+        50.0,
+        "mass:",
+        "mass of the spawned particle",
+    );
+    drag_value_with_multiply_buttons(
+        ui,
+        &mut settings.radius,
+        0.1,
+        "radius:",
+        "radius of the spawned particle",
+    );
+}
+
+fn spawn_random_gui(ui: &mut egui::Ui, mut settings: ResMut<ToolSettings>) {
+    // make sure amount to spawn can be properly converted to u32
+    settings.amount_to_spawn = settings.amount_to_spawn.abs().round();
+    // make sure that the inner and outer radius are not greater or smaller than eachother, could panic otherwise
+    settings.inner_radius = settings.inner_radius.min(settings.outer_radius);
+    settings.outer_radius = settings.outer_radius.max(settings.inner_radius);
+    drag_value_with_multiply_buttons(
+        ui,
+        &mut settings.amount_to_spawn,
+        1.0,
+        "amount:",
+        "amount of particles to spawn",
+    );
+    drag_value_with_multiply_buttons(
+        ui,
+        &mut settings.mass,
+        50.0,
+        "mass:",
+        "mass of the spawned particles",
+    );
+    drag_value_with_multiply_buttons(
+        ui,
+        &mut settings.scalar_velocity,
+        50.0,
+        "velocity range:",
+        "velocity of particls will be between 0 and this value",
+    );
+    drag_value_with_multiply_buttons(
+        ui,
+        &mut settings.radius,
+        0.1,
+        "radius:",
+        "radius of the spawned particles",
+    );
+    drag_value_with_multiply_buttons(
+        ui,
+        &mut settings.inner_radius,
+        1.0,
+        "inner radius:",
+        "inner radius of the particle cloud, having this above zero makes a doughnut shape",
+    );
+    drag_value_with_multiply_buttons(
+        ui,
+        &mut settings.outer_radius,
+        1.0,
+        "outer radius:",
+        "outer radius of the particle cloud",
+    );
+    ui.checkbox(&mut settings.value_variation, "value variation").on_hover_text_at_pointer("make the values of spawned particles different, meaning they will be lighter and darker than eachother");
 }
 
 /// things done when the left mouse button is released
@@ -132,7 +226,16 @@ fn tool_behaviours(
                     .mass(settings.mass)
                     .spawn(&mut commands)
             }
-            Tool::SpawnRandom => todo!(),
+            Tool::SpawnRandom => spawners::SpawnRandomParticles::new()
+                .position(cursor_coords.0)
+                .velocity(settings.scalar_velocity)
+                .outer_radius(settings.outer_radius)
+                .inner_radius(settings.inner_radius)
+                .amount(settings.amount_to_spawn as u32)
+                .mass(settings.mass)
+                .value_variation(settings.value_variation)
+                .radius(settings.radius)
+                .spawn(&mut commands),
             Tool::SpawnHose => todo!(),
             Tool::Attract => todo!(),
             Tool::Repel => todo!(),
@@ -145,7 +248,7 @@ fn tool_behaviours(
             Tool::SpawnParticle => {
                 settings.position = cursor_coords.0;
             }
-            Tool::SpawnRandom => todo!(),
+            Tool::SpawnRandom => (),
             Tool::SpawnHose => todo!(),
             Tool::Attract => todo!(),
             Tool::Repel => todo!(),
@@ -158,16 +261,14 @@ fn tool_behaviours(
             Tool::SpawnParticle => {
                 let direction = settings.position - cursor_coords.0;
                 let arrow_end = settings.position + direction;
-                gizmos
-                    .arrow_2d(settings.position, arrow_end, Color::WHITE)
-                    .with_tip_length(20.0);
+                gizmos.arrow_2d(settings.position, arrow_end, Color::WHITE);
                 gizmos.circle_2d(
                     Isometry2d::new(settings.position, Rot2::IDENTITY),
                     settings.radius,
                     Color::WHITE,
                 );
             }
-            Tool::SpawnRandom => todo!(),
+            Tool::SpawnRandom => (),
             Tool::SpawnHose => todo!(),
             Tool::Attract => todo!(),
             Tool::Repel => todo!(),
@@ -186,7 +287,18 @@ fn tool_behaviours(
                     )
                     .resolution(32);
             }
-            Tool::SpawnRandom => todo!(),
+            Tool::SpawnRandom => {
+                gizmos.circle_2d(
+                    Isometry2d::new(cursor_coords.0, Rot2::IDENTITY),
+                    settings.outer_radius,
+                    Color::WHITE,
+                );
+                gizmos.circle_2d(
+                    Isometry2d::new(cursor_coords.0, Rot2::IDENTITY),
+                    settings.inner_radius,
+                    Color::WHITE,
+                );
+            }
             Tool::SpawnHose => todo!(),
             Tool::Attract => todo!(),
             Tool::Repel => todo!(),
