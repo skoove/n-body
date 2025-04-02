@@ -13,9 +13,9 @@ impl Plugin for SimPlugin {
         app.add_systems(
             FixedUpdate,
             (
+                motion::update_particle_positions,
                 gravity::calc_grav_accel,
                 collisions::calculate_collisions,
-                motion::update_particle_positions,
             )
                 .chain()
                 .run_if(sim_not_paused),
