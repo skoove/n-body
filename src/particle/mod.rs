@@ -3,6 +3,7 @@ use bevy::prelude::*;
 
 use crate::simulation::motion::Acceleration;
 use crate::simulation::motion::OldPosition;
+use crate::simulation::motion::PreviousAcceleration;
 
 mod spawners;
 
@@ -36,6 +37,7 @@ pub struct ParticleBundle {
     position: Transform,
     old_position: OldPosition,
     acceleration: Acceleration,
+    previous_acceleration: PreviousAcceleration,
     color: SpawnColor,
 }
 
@@ -49,6 +51,7 @@ impl ParticleBundle {
             old_position: OldPosition(Transform::from_xyz(0.0, 0.0, 0.0)),
             acceleration: Acceleration(Vec2::ZERO),
             color: SpawnColor(Color::hsv(0.0, 0.0, 1.00)),
+            previous_acceleration: PreviousAcceleration(Vec2::ZERO),
         }
     }
 
@@ -62,6 +65,7 @@ impl ParticleBundle {
             old_position: self.old_position,
             acceleration: self.acceleration,
             color: self.color,
+            previous_acceleration: self.previous_acceleration,
         });
     }
 
