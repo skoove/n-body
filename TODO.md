@@ -6,12 +6,12 @@
   - [x] rewrite the random spawning function
     - [x] customise radius
     - [x] customise center point
-  - [ ] add a particle stream spawner
+  - [x] add a particle stream spawner
     - spawn a stream of particles over time
-    - [ ] cutomisable spawnrate
-    - [ ] spawn with gradient of colors, changing over time as more are spawned
-    - [ ] set velocity
-    - [ ] set amount to be spawned, until they stop spawning
+    - [x] cutomisable spawnrate
+    - [x] spawn with gradient of colors, changing over time as more are spawned
+    - [x] set velocity
+    - [x] set amount to be spawned, until they stop spawning
   - [x] add a single particle spawner
     - this can just use the existing `ParticleBundle` builder, im happy with that
     - [x] customise mass
