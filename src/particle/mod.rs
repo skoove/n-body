@@ -5,7 +5,7 @@ use crate::simulation::motion::Acceleration;
 use crate::simulation::motion::OldPosition;
 use crate::simulation::motion::PreviousAcceleration;
 
-mod spawners;
+pub mod spawners;
 
 pub struct ParticlePlugin;
 
