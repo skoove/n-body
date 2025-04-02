@@ -26,7 +26,7 @@ impl Plugin for SimPlugin {
 }
 
 /// returns true if the simulation is not paused
-fn sim_not_paused(settings: Res<SimSettings>) -> bool {
+pub fn sim_not_paused(settings: Res<SimSettings>) -> bool {
     !settings.paused
 }
 

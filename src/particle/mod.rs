@@ -1,6 +1,7 @@
 use bevy::color::Color;
 use bevy::prelude::*;
 
+use crate::simulation;
 use crate::simulation::motion::Acceleration;
 use crate::simulation::motion::OldPosition;
 use crate::simulation::motion::PreviousAcceleration;
@@ -12,6 +13,10 @@ pub struct ParticlePlugin;
 impl Plugin for ParticlePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, (show_particles, count_particles))
+            .add_systems(
+                FixedUpdate,
+                (spawners::particle_hose_system).run_if(simulation::sim_not_paused),
+            )
             .init_resource::<ParticleCount>();
     }
 }

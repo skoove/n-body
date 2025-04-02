@@ -107,3 +107,129 @@ impl SpawnRandomParticles {
         }
     }
 }
+
+#[derive(Component)]
+pub struct ParticleHose {
+    timer: Timer,
+    position: Vec2,
+    start_amount: u32,
+    amount: u32,
+    radius: f32,
+    mass: f32,
+    velocity: f32,
+    direction: Vec2,
+    rainbow: bool,
+}
+
+/// A particle hose spawns particles in one direction with a velocity, they have
+/// a set amount of particles they spawn until they run out and will then destroy
+/// themselves.
+impl ParticleHose {
+    pub fn new() -> Self {
+        Self {
+            timer: Timer::from_seconds(1.0, TimerMode::Repeating),
+            start_amount: 100,
+            amount: 100,
+            radius: 1.0,
+            mass: 1.0,
+            velocity: 1.0,
+            direction: Vec2::from_angle(0.0),
+            rainbow: false,
+            position: Vec2::ZERO,
+        }
+    }
+
+    /// Amount of particles to be spawned per second from the hose
+    pub fn per_second(mut self, per_second: f32) -> Self {
+        self.timer = Timer::from_seconds(1.0 / per_second, TimerMode::Repeating);
+        self
+    }
+
+    /// Amount of particles to be spawned in total from the hose
+    pub fn amount(mut self, amount: u32) -> Self {
+        self.amount = amount;
+        self.start_amount = amount;
+        self
+    }
+
+    /// Radius of the particles spawned by the hose
+    pub fn radius(mut self, radius: f32) -> Self {
+        self.radius = radius;
+        self
+    }
+
+    /// Mass of the spawned particles
+    pub fn mass(mut self, mass: f32) -> Self {
+        self.mass = mass;
+        self
+    }
+
+    /// Velocity of spawned particles
+    pub fn velocity(mut self, velo: f32) -> Self {
+        self.velocity = velo;
+        self
+    }
+
+    /// Direction of the hose as a `Vec2`, only the direction of the `Vec2` matters, not the magnitude
+    pub fn direction(mut self, direction: Vec2) -> Self {
+        self.direction = direction;
+        self
+    }
+
+    /// If true the particles will be spawned in a rainbow, the spawn color will change as the hose runs out
+    pub fn rainbow(mut self, rainbow: bool) -> Self {
+        self.rainbow = rainbow;
+        self
+    }
+
+    /// The location of the particle spawner
+    pub fn position(mut self, pos: Vec2) -> Self {
+        self.position = pos;
+        self
+    }
+
+    /// Spawn the particle hose
+    pub fn spawn(self, commands: &mut Commands) {
+        commands.spawn(self);
+    }
+}
+
+pub fn particle_hose_system(
+    mut hoses: Query<(Entity, &mut ParticleHose)>,
+    mut commands: Commands,
+    time: Res<Time>,
+) {
+    for (entity, mut hose) in hoses.iter_mut() {
+        // if hose has run out destory yourself
+        if hose.amount == 0 {
+            commands.entity(entity).despawn();
+            return;
+        }
+
+        // tick timer
+        hose.timer.tick(time.delta());
+
+        // if timer is not finished do nothing
+        if !hose.timer.finished() {
+            return;
+        }
+
+        let velocity = hose.direction.normalize() * hose.velocity;
+        let mut color = Color::WHITE;
+        if hose.rainbow {
+            let hue = (hose.amount as f32 / hose.start_amount as f32) * 360.0;
+            color = Color::hsv(hue, 1.0, 1.0);
+        }
+
+        commands.spawn(
+            ParticleBundle::new()
+                .radius(hose.radius)
+                .mass(hose.mass)
+                .position(hose.position)
+                .velocity(velocity)
+                .color(color),
+        );
+
+        hose.amount -= 1;
+    }
+}
