@@ -101,7 +101,7 @@ fn tools_gui(mut contexts: EguiContexts, mut tool: ResMut<Tool>, settings: ResMu
 fn spawn_particle_gui(ui: &mut egui::Ui, mut settings: ResMut<ToolSettings>) {
     ui.horizontal(|ui| {
         ui.label("mass:");
-        ui.add(egui::DragValue::new(&mut settings.mass))
+        ui.add(egui::DragValue::new(&mut settings.mass).speed(50.0))
             .on_hover_text_at_pointer("the mass of the spawned particle")
     });
     ui.horizontal(|ui| {
