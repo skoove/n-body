@@ -35,6 +35,10 @@ struct ToolSettings {
     amount_to_spawn: f32,
     scalar_velocity: f32,
     value_variation: bool,
+
+    rainbow: bool,
+    direction: Vec2,
+    spawn_rate: f32,
 }
 
 impl Default for ToolSettings {
@@ -50,6 +54,10 @@ impl Default for ToolSettings {
             amount_to_spawn: 100.0,
             scalar_velocity: 0.0,
             value_variation: false,
+
+            rainbow: false,
+            direction: Vec2::X,
+            spawn_rate: 1.0,
         }
     }
 }
@@ -103,7 +111,7 @@ fn tools_gui(mut contexts: EguiContexts, mut tool: ResMut<Tool>, settings: ResMu
         match *tool {
             Tool::SpawnParticle => spawn_particle_gui(ui, settings),
             Tool::SpawnRandom => spawn_random_gui(ui, settings),
-            Tool::SpawnHose => todo!(),
+            Tool::SpawnHose => spawn_hose_gui(ui, settings),
             Tool::Attract => todo!(),
             Tool::Repel => todo!(),
         }
@@ -158,8 +166,8 @@ fn spawn_random_gui(ui: &mut egui::Ui, mut settings: ResMut<ToolSettings>) {
     // make sure amount to spawn can be properly converted to u32
     settings.amount_to_spawn = settings.amount_to_spawn.abs().round();
     // make sure that the inner and outer radius are not greater or smaller than eachother, could panic otherwise
-    settings.inner_radius = settings.inner_radius.min(settings.outer_radius);
-    settings.outer_radius = settings.outer_radius.max(settings.inner_radius);
+    settings.inner_radius = settings.inner_radius.min(settings.outer_radius - 1.0).abs();
+    settings.outer_radius = settings.outer_radius.max(settings.inner_radius + 1.0).abs();
     drag_value_with_multiply_buttons(
         ui,
         &mut settings.amount_to_spawn,
@@ -205,6 +213,48 @@ fn spawn_random_gui(ui: &mut egui::Ui, mut settings: ResMut<ToolSettings>) {
     ui.checkbox(&mut settings.value_variation, "value variation").on_hover_text_at_pointer("make the values of spawned particles different, meaning they will be lighter and darker than eachother");
 }
 
+fn spawn_hose_gui(ui: &mut egui::Ui, mut settings: ResMut<ToolSettings>) {
+    // make sure amount to spawn can be properly converted to u32
+    settings.amount_to_spawn = settings.amount_to_spawn.abs().round();
+    drag_value_with_multiply_buttons(
+        ui,
+        &mut settings.amount_to_spawn,
+        1.0,
+        "amount to spawn",
+        "amount for the hose to spawn until it destroys itself",
+    );
+    drag_value_with_multiply_buttons(
+        ui,
+        &mut settings.spawn_rate,
+        0.1,
+        "spawn rate:",
+        "amount of particles to spawn per second",
+    );
+    drag_value_with_multiply_buttons(
+        ui,
+        &mut settings.radius,
+        0.1,
+        "radius:",
+        "radius of the spawned particles",
+    );
+    drag_value_with_multiply_buttons(
+        ui,
+        &mut settings.mass,
+        50.0,
+        "mass:",
+        "mass of the spawned particles",
+    );
+    drag_value_with_multiply_buttons(
+        ui,
+        &mut settings.scalar_velocity,
+        0.01,
+        "velocity",
+        "velocity of particles coming out of the hose",
+    );
+    ui.checkbox(&mut settings.rainbow, "rainbow")
+        .on_hover_text_at_pointer("when checked the particles will spawn in a rainbow :D");
+}
+
 /// things done when the left mouse button is released
 fn tool_behaviours(
     mut commands: Commands,
@@ -236,7 +286,16 @@ fn tool_behaviours(
                 .value_variation(settings.value_variation)
                 .radius(settings.radius)
                 .spawn(&mut commands),
-            Tool::SpawnHose => todo!(),
+            Tool::SpawnHose => spawners::ParticleHose::new()
+                .amount(settings.amount_to_spawn as u32)
+                .position(settings.position)
+                .velocity(settings.scalar_velocity)
+                .radius(settings.radius)
+                .mass(settings.mass)
+                .rainbow(settings.rainbow)
+                .direction(settings.direction)
+                .per_second(settings.spawn_rate)
+                .spawn(&mut commands),
             Tool::Attract => todo!(),
             Tool::Repel => todo!(),
         };
@@ -249,7 +308,7 @@ fn tool_behaviours(
                 settings.position = cursor_coords.0;
             }
             Tool::SpawnRandom => (),
-            Tool::SpawnHose => todo!(),
+            Tool::SpawnHose => settings.position = cursor_coords.0,
             Tool::Attract => todo!(),
             Tool::Repel => todo!(),
         };
@@ -269,7 +328,12 @@ fn tool_behaviours(
                 );
             }
             Tool::SpawnRandom => (),
-            Tool::SpawnHose => todo!(),
+            Tool::SpawnHose => {
+                let direction = (settings.position - cursor_coords.0).normalize() * 10.0;
+                let arrow_end = settings.position + direction;
+                gizmos.arrow_2d(settings.position, arrow_end, Color::WHITE);
+                settings.direction = direction;
+            }
             Tool::Attract => todo!(),
             Tool::Repel => todo!(),
         };
@@ -299,7 +363,7 @@ fn tool_behaviours(
                     Color::WHITE,
                 );
             }
-            Tool::SpawnHose => todo!(),
+            Tool::SpawnHose => (),
             Tool::Attract => todo!(),
             Tool::Repel => todo!(),
         };
