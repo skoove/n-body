@@ -177,7 +177,7 @@ fn spawn_random_gui(ui: &mut egui::Ui, mut settings: ResMut<ToolSettings>) {
     drag_value_with_multiply_buttons(
         ui,
         &mut settings.scalar_velocity,
-        50.0,
+        0.01,
         "velocity range:",
         "velocity of particls will be between 0 and this value",
     );
