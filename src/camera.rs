@@ -18,6 +18,7 @@ impl Plugin for CameraPlugin {
 }
 
 #[derive(Resource, Default)]
+/// Resource that provides the current world coords of the camera
 pub struct CursorWorldCoords(pub Vec2);
 
 fn setup_camera(mut commands: Commands) {
