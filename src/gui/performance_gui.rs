@@ -22,11 +22,13 @@ impl Plugin for PreformanceGuiPlugin {
 }
 
 #[derive(Resource, Debug)]
+/// [VecDeque] of past performance data
 pub struct PerformanceData {
     pub frame_time: VecDeque<f32>,
 }
 
 #[derive(Resource)]
+/// Settings for display of performance data
 struct PerformanceGuiSettings {
     history_to_show: i32,
 }
@@ -49,6 +51,7 @@ fn performance_gui(
         performance_data.frame_time.iter().sum::<f32>() / performance_data.frame_time.len() as f32;
 
     egui::Window::new("performance").show(contexts.ctx_mut(), |ui| {
+        // attach an index to the vec for display
         let frame_time_plot: PlotPoints = performance_data
             .frame_time
             .iter()
