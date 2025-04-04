@@ -24,7 +24,6 @@ impl Plugin for GuiPlugin {
             ToolsGuiPlugin,
             ViewsPlugin,
         ))
-        .add_systems(Update, value_viewer)
         .add_systems(
             PreUpdate,
             absorb_egui_inputs
@@ -32,15 +31,6 @@ impl Plugin for GuiPlugin {
                 .before(bevy_egui::begin_pass_system),
         );
     }
-}
-
-/// used for quickly viewing values when needed
-fn value_viewer(mut contexts: bevy_egui::EguiContexts, value: Res<QuadTree>) {
-    egui::Window::new("value").show(contexts.ctx_mut(), |ui| {
-        egui::ScrollArea::vertical().show(ui, |ui| {
-            ui.label(format!("{:#?}", *value));
-        });
-    });
 }
 
 // source:
