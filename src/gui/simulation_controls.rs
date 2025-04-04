@@ -14,6 +14,7 @@ impl Plugin for SimulationControlsGuiPlugin {
 }
 
 #[derive(Resource)]
+/// controls the amount of time we will wait for fixedupate until we start slowing down time
 struct MaxDelta(u64);
 
 fn sim_controls_gui(
