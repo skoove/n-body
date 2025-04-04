@@ -28,7 +28,7 @@ pub struct QuadTree {
     points: Vec<(Entity, Vec2)>,
     children: Option<[Box<QuadTree>; 4]>,
     //   Nodes
-    // +---=---+
+    // +---+---+
     // | 0 | 1 |
     // +---+---+
     // | 2 | 3 |
