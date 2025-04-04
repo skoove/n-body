@@ -3,6 +3,7 @@ use bevy_egui::{egui, EguiContexts};
 
 use crate::particle::Particle;
 use crate::simulation::motion::{OldPosition, PreviousAcceleration};
+use crate::simulation::quadtree::QuadTree;
 
 pub struct ViewsPlugin;
 
@@ -14,6 +15,7 @@ impl Plugin for ViewsPlugin {
                 views_gui,
                 render_velocity_arrows,
                 render_acceleration_arrows,
+                render_quad_tree,
             ),
         )
         .init_resource::<ViewSettings>();
@@ -22,6 +24,7 @@ impl Plugin for ViewsPlugin {
 
 #[derive(Resource, Default)]
 struct ViewSettings {
+    quad_tree: bool,
     velocity_arrows: bool,
     acceleration_arrows: bool,
 }
@@ -35,7 +38,15 @@ fn views_gui(mut contexts: EguiContexts, mut settings: ResMut<ViewSettings>) {
             "acceleration arrows (green)",
         )
         .on_hover_text_at_pointer("renders acceleration arrows on particles");
+        ui.checkbox(&mut settings.quad_tree, "quadtree")
     });
+}
+
+fn render_quad_tree(mut gizmos: Gizmos, settings: Res<ViewSettings>, qt: Res<QuadTree>) {
+    if !settings.quad_tree {
+        return;
+    }
+    qt.render(&mut gizmos);
 }
 
 fn render_velocity_arrows(

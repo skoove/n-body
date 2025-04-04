@@ -1,9 +1,12 @@
 use bevy::{input::mouse::MouseWheel, prelude::*};
+use bevy_egui::egui;
 use bevy_egui::EguiPlugin;
 use performance_gui::PreformanceGuiPlugin;
 use simulation_controls::SimulationControlsGuiPlugin;
 use tools::ToolsGuiPlugin;
 use views::ViewsPlugin;
+
+use crate::simulation::quadtree::QuadTree;
 
 pub mod performance_gui;
 mod simulation_controls;
@@ -21,6 +24,7 @@ impl Plugin for GuiPlugin {
             ToolsGuiPlugin,
             ViewsPlugin,
         ))
+        .add_systems(Update, value_viewer)
         .add_systems(
             PreUpdate,
             absorb_egui_inputs
@@ -28,6 +32,15 @@ impl Plugin for GuiPlugin {
                 .before(bevy_egui::begin_pass_system),
         );
     }
+}
+
+/// used for quickly viewing values when needed
+fn value_viewer(mut contexts: bevy_egui::EguiContexts, value: Res<QuadTree>) {
+    egui::Window::new("value").show(contexts.ctx_mut(), |ui| {
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            ui.label(format!("{:#?}", *value));
+        });
+    });
 }
 
 // source:

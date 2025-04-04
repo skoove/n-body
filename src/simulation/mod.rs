@@ -5,6 +5,7 @@ use bevy::prelude::*;
 pub mod collisions;
 pub mod gravity;
 pub mod motion;
+pub mod quadtree;
 
 pub struct SimPlugin;
 
@@ -13,6 +14,7 @@ impl Plugin for SimPlugin {
         app.add_systems(
             FixedUpdate,
             (
+                quadtree::quadtree_system,
                 motion::update_particle_positions,
                 gravity::calc_grav_accel,
                 collisions::calculate_collisions,
@@ -21,7 +23,9 @@ impl Plugin for SimPlugin {
                 .run_if(sim_not_paused),
         )
         .insert_resource(Time::<Fixed>::from_hz(PHYSICS_UPDATE_HZ))
-        .init_resource::<SimSettings>();
+        .init_resource::<SimSettings>()
+        .init_resource::<quadtree::QuadTreeSettings>()
+        .init_resource::<quadtree::QuadTree>();
     }
 }
 
