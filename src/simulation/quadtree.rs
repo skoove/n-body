@@ -1,9 +1,4 @@
-use bevy::{
-    gizmos::aabb,
-    math::bounding::{Aabb2d, BoundingVolume},
-    prelude::*,
-    reflect::List,
-};
+use bevy::{math::bounding::Aabb2d, prelude::*, reflect::List};
 
 use crate::particle::Particle;
 
@@ -107,19 +102,15 @@ impl QuadTree {
         self
     }
 
-    /// Render the quadtree, for debugging
     pub fn render(&self, gizmos: &mut Gizmos) {
         let min = self.bounds.min;
         let max = self.bounds.max;
+        let center = (min + max) / 2.0;
+        let size = max - min;
         let color = Color::hsva(120.0, 1.0, 1.0, 0.01);
 
-        // Draw the AABB (as four lines)
-        gizmos.line_2d(min, Vec2::new(max.x, min.y), color);
-        gizmos.line_2d(Vec2::new(max.x, min.y), max, color);
-        gizmos.line_2d(max, Vec2::new(min.x, max.y), color);
-        gizmos.line_2d(Vec2::new(min.x, max.y), min, color);
+        gizmos.rect_2d(Isometry2d::new(center, Rot2::IDENTITY), size, color);
 
-        // Recursively render children
         if let Some(children) = &self.children {
             children.iter().for_each(|child| {
                 child.render(gizmos);
