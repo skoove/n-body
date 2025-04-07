@@ -1,10 +1,12 @@
 use bevy::{input::mouse::MouseWheel, prelude::*};
 use bevy_egui::EguiPlugin;
+use debug::DebugPlugin;
 use performance_gui::PreformanceGuiPlugin;
 use simulation_controls::SimulationControlsGuiPlugin;
 use tools::ToolsGuiPlugin;
 use views::ViewsPlugin;
 
+mod debug;
 pub mod performance_gui;
 mod simulation_controls;
 mod tools;
@@ -20,6 +22,7 @@ impl Plugin for GuiPlugin {
             SimulationControlsGuiPlugin,
             ToolsGuiPlugin,
             ViewsPlugin,
+            DebugPlugin,
         ))
         .add_systems(
             PreUpdate,
