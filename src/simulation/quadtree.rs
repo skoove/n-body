@@ -163,13 +163,21 @@ pub fn quadtree_system(
     mut commands: Commands,
     particles: Query<(Entity, &Transform, &Mass), With<Particle>>,
 ) {
+    if particles.is_empty() {
+        debug!("skipping quadtree construction as there are no particles");
+        return;
+    }
+
     let particles = particles
         .iter()
         .map(|(entity, transform, mass)| (entity, transform.translation.truncate(), mass.clone()))
         .collect();
+
     let mut qt = QuadTree::new(&particles);
+
     for (entity, transform, mass) in particles {
         qt.insert(entity, transform, mass, 0);
     }
+
     commands.insert_resource(qt);
 }
