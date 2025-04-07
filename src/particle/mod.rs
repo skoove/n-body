@@ -27,7 +27,7 @@ pub struct Particle;
 #[derive(Component)]
 pub struct Radius(pub f32);
 
-#[derive(Component)]
+#[derive(Component, Clone, Copy, Debug)]
 pub struct Mass(pub f32);
 
 /// The color **at spawn** of an entity. To change color use [`set_color()`]

@@ -24,7 +24,6 @@ impl Plugin for SimPlugin {
         )
         .insert_resource(Time::<Fixed>::from_hz(PHYSICS_UPDATE_HZ))
         .init_resource::<SimSettings>()
-        .init_resource::<quadtree::QuadTreeSettings>()
         .init_resource::<quadtree::QuadTree>();
     }
 }

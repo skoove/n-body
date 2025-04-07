@@ -1,28 +1,27 @@
-use bevy::{math::bounding::Aabb2d, prelude::*, reflect::List};
+use std::collections::hash_map::HashMap;
 
-use crate::particle::Particle;
+use crate::particle::{self, Mass, Particle};
+use bevy::{math::bounding::Aabb2d, prelude::*};
 
-#[derive(Resource)]
-pub struct QuadTreeSettings {
-    render: bool,
-    capacity: u32,
-}
-
-impl Default for QuadTreeSettings {
-    fn default() -> Self {
-        Self {
-            render: true,
-            capacity: 1,
-        }
-    }
-}
-
-#[derive(Resource, Debug)]
+#[derive(Default, Resource, Debug)]
+/// Quad tree with a vector of [Node]s and a hash map used to look up the index of the node that a entity is in in the tree
 pub struct QuadTree {
+    nodes: Vec<Node>,
+    hash_map: HashMap<Entity, usize>,
+}
+
+/// Nodes have a unique id, and store ids to their children
+/// A nodes id is their index in the array of nodes in quadtree
+#[derive(Clone, Copy, Debug)]
+struct Node {
     bounds: Aabb2d,
-    points: Vec<(Entity, Vec2)>,
-    children: Option<[Box<QuadTree>; 4]>,
-    //   Nodes
+    parent_id: usize,
+    id: usize,
+    children: Option<[usize; 4]>,
+    particle: Option<(Entity, Vec2, Mass)>,
+    center_of_mass: Vec2,
+    mass: f32,
+    //    Node
     // +---+---+
     // | 0 | 1 |
     // +---+---+
@@ -30,145 +29,147 @@ pub struct QuadTree {
     // +---+---+
 }
 
-impl Default for QuadTree {
-    fn default() -> Self {
-        QuadTree {
-            bounds: Aabb2d::new(Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0)),
-            points: Vec::new(),
+impl Node {
+    fn new(parent_id: usize, id: usize, bounds: Aabb2d) -> Self {
+        let (_, _, mid) = get_max_min_mid(&bounds);
+        debug!("new node created id: {id} parent id: {parent_id}");
+        Self {
+            bounds,
+            parent_id,
+            id,
             children: None,
+            particle: None,
+            center_of_mass: mid,
+            mass: 0.0,
         }
     }
 }
 
 impl QuadTree {
-    /// Create a new quadtree, this only actually creates the root node which is a
-    /// bounding box of the points you dump in it. Returns [`None`] if there are no points
-    /// in the [`Vec<Vec2>`]
-    pub fn from_points(points: Vec<Vec2>) -> Option<Self> {
-        // return early if there is nothing in there
-        if points.iter().count() == 0 {
-            return None;
-        }
-        Some(Self {
-            bounds: Aabb2d::from_point_cloud(Isometry2d::IDENTITY, &points),
-            points: Vec::new(),
-            children: None,
-        })
-    }
+    fn new(particles: &Vec<(Entity, Vec2, Mass)>) -> Self {
+        let mut node_vec = Vec::new();
+        let hash_map: HashMap<Entity, usize> = HashMap::new();
+        // we need to get a vec of Vec2 to make an aabb for the root node
+        let positions: Vec<Vec2> = particles
+            .iter()
+            .map(|(_, position, _)| position.clone())
+            .collect();
+        let root_aabb = Aabb2d::from_point_cloud(Isometry2d::IDENTITY, &positions);
+        let root_node = Node::new(0, 0, root_aabb);
 
-    /// New tree from a bounding rect
-    pub fn new(quad: Aabb2d) -> Self {
+        node_vec.push(root_node);
+
         Self {
-            bounds: quad,
-            points: Vec::new(),
-            children: None,
+            nodes: node_vec,
+            hash_map,
         }
     }
 
-    /// Subdivide the quadtree into four equal quadrents
-    pub fn subdivide(&mut self, settings: &Res<QuadTreeSettings>) -> &mut Self {
-        let min = self.bounds.min;
-        let max = self.bounds.max;
-        let mid = (max + min) / 2.0;
-
-        let q0 = Aabb2d {
-            min: Vec2::new(min.x, mid.y),
-            max: Vec2::new(mid.x, max.y),
-        };
-        let q1 = Aabb2d {
-            min: Vec2::new(mid.x, mid.y),
-            max: Vec2::new(max.x, max.y),
-        };
-        let q2 = Aabb2d {
-            min: Vec2::new(min.x, min.y),
-            max: Vec2::new(mid.x, mid.y),
-        };
-        let q3 = Aabb2d {
-            min: Vec2::new(mid.x, min.y),
-            max: Vec2::new(max.x, mid.y),
-        };
-
-        self.children = Some([
-            Box::new(QuadTree::new(q0)),
-            Box::new(QuadTree::new(q1)),
-            Box::new(QuadTree::new(q2)),
-            Box::new(QuadTree::new(q3)),
-        ]);
-
-        for (entity, point) in self.points.drain(..).collect::<Vec<(Entity, Vec2)>>() {
-            self.insert(settings, point, entity);
+    fn insert(
+        &mut self,
+        entity: Entity,
+        position: Vec2,
+        mass: Mass,
+        target_node: usize,
+    ) -> &mut Self {
+        {
+            let node = &self.nodes[target_node];
         }
-
         self
     }
+
+    fn subdivide(&mut self, node_id: usize) -> &mut Self {
+        let (aabbs, particle) = {
+            if let Some(node) = self.nodes.get_mut(node_id) {
+                let (max, min, mid) = get_max_min_mid(&node.bounds);
+
+                let aabbs = [
+                    Aabb2d {
+                        min: Vec2::new(min.x, mid.y),
+                        max: Vec2::new(mid.x, max.y),
+                    },
+                    Aabb2d {
+                        min: Vec2::new(mid.x, mid.y),
+                        max: Vec2::new(max.x, max.y),
+                    },
+                    Aabb2d {
+                        min: Vec2::new(min.x, min.y),
+                        max: Vec2::new(mid.x, mid.y),
+                    },
+                    Aabb2d {
+                        min: Vec2::new(mid.x, min.y),
+                        max: Vec2::new(max.x, mid.y),
+                    },
+                ];
+                (aabbs, node.particle)
+            } else {
+                error!(
+                    "failed to subdivide node at id: {} beacuse it did not exist!",
+                    node_id
+                );
+                panic!();
+            }
+        };
+
+        let mut new_node_ids = Vec::new();
+
+        for aabb in aabbs {
+            let id = self.nodes.len() + 1;
+            new_node_ids.push(id);
+            let new_node = Node::new(node_id, id, aabb);
+            self.nodes.push(new_node);
+        }
+
+        self.nodes[node_id].children = Some(new_node_ids.try_into().unwrap());
+
+        if let Some(particle) = particle {
+            let (entity, position, mass) = particle;
+            self.insert(entity, position, mass, node_id);
+        }
+        return self;
+    }
+
+    const QUADTREE_COLOR: Color = Color::Srgba(Srgba {
+        red: 0.0,
+        green: 1.0,
+        blue: 0.0,
+        alpha: 0.01,
+    });
 
     pub fn render(&self, gizmos: &mut Gizmos) {
-        let min = self.bounds.min;
-        let max = self.bounds.max;
-        let center = (min + max) / 2.0;
-        let size = max - min;
-        let color = Color::hsva(120.0, 1.0, 1.0, 0.01);
-
-        gizmos.rect_2d(Isometry2d::new(center, Rot2::IDENTITY), size, color);
-
-        if let Some(children) = &self.children {
-            children.iter().for_each(|child| {
-                child.render(gizmos);
-            });
+        for node in &self.nodes {
+            let b = &node.bounds;
+            let center = (b.max + b.min) / 2.0;
+            let size = b.max - b.min;
+            gizmos.rect_2d(center, size, Self::QUADTREE_COLOR);
         }
-    }
-
-    /// Insert an entity into the quadtree
-    pub fn insert(
-        &mut self,
-        settings: &Res<QuadTreeSettings>,
-        pos: Vec2,
-        entity: Entity,
-    ) -> &mut Self {
-        if self.points.len() < settings.capacity as usize && self.children.is_none() {
-            self.points.push((entity, pos));
-            return self;
-        }
-
-        if self.children.is_none() {
-            self.subdivide(settings);
-        };
-
-        if let Some(children) = &mut self.children {
-            for child in children.iter_mut() {
-                if contains(&child.bounds, &pos) {
-                    child.insert(settings, pos, entity);
-                    break;
-                }
-            }
-        }
-        self
     }
 }
 
 /// Checks if a aabb contains a point ( why is this not in the crate?? )
 pub fn contains(aabb: &Aabb2d, pos: &Vec2) -> bool {
-    aabb.min.x < pos.x && aabb.min.y < pos.y && aabb.max.x > pos.x && aabb.max.y > pos.y
+    aabb.min.x <= pos.x && aabb.min.y <= pos.y && aabb.max.x >= pos.x && aabb.max.y >= pos.y
+}
+
+fn get_max_min_mid(aabb: &Aabb2d) -> (Vec2, Vec2, Vec2) {
+    let min = aabb.min;
+    let max = aabb.max;
+    let mid = (max + min) / 2.0;
+    (max, min, mid)
 }
 
 pub fn quadtree_system(
     mut gizmos: Gizmos,
-    settings: Res<QuadTreeSettings>,
     mut commands: Commands,
-    points: Query<(Entity, &Transform), With<Particle>>,
+    particles: Query<(Entity, &Transform, &Mass), With<Particle>>,
 ) {
-    let mut particle_positions = Vec::<Vec2>::new();
-
-    for (_, position) in points.iter() {
-        let pos = position.translation.truncate();
-        particle_positions.push(pos);
+    let particles = particles
+        .iter()
+        .map(|(entity, transform, mass)| (entity, transform.translation.truncate(), mass.clone()))
+        .collect();
+    let mut qt = QuadTree::new(&particles);
+    for (entity, transform, mass) in particles {
+        qt.insert(entity, transform, mass, 0);
     }
-
-    if let Some(mut qt) = QuadTree::from_points(particle_positions) {
-        for (entity, position) in points.iter() {
-            let pos = position.translation.truncate();
-            qt.insert(&settings, pos, entity);
-        }
-        commands.insert_resource(qt);
-    }
+    commands.insert_resource(qt);
 }
