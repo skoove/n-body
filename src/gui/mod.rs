@@ -1,12 +1,9 @@
 use bevy::{input::mouse::MouseWheel, prelude::*};
-use bevy_egui::egui;
 use bevy_egui::EguiPlugin;
 use performance_gui::PreformanceGuiPlugin;
 use simulation_controls::SimulationControlsGuiPlugin;
 use tools::ToolsGuiPlugin;
 use views::ViewsPlugin;
-
-use crate::simulation::quadtree::QuadTree;
 
 pub mod performance_gui;
 mod simulation_controls;
