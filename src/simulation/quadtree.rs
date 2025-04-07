@@ -1,6 +1,6 @@
-use std::collections::hash_map::HashMap;
+use std::{collections::hash_map::HashMap, time::Instant};
 
-use crate::particle::{self, Mass, Particle};
+use crate::particle::{Mass, Particle};
 use bevy::{math::bounding::Aabb2d, prelude::*};
 
 #[derive(Default, Resource, Debug)]
@@ -17,15 +17,16 @@ struct Node {
     bounds: Aabb2d,
     parent_id: usize,
     id: usize,
-    children: Option<[usize; 4]>,
+    // This is the index of the first child, the rest will be just +1 +2 and +3
+    children: Option<usize>,
     particle: Option<(Entity, Vec2, Mass)>,
     center_of_mass: Vec2,
     mass: f32,
     //    Node
     // +---+---+
-    // | 0 | 1 |
+    // | 1 | 2 |
     // +---+---+
-    // | 2 | 3 |
+    // | 3 | 4 |
     // +---+---+
 }
 
@@ -43,12 +44,29 @@ impl Node {
             mass: 0.0,
         }
     }
+
+    fn is_leaf(&self) -> bool {
+        self.children.is_none()
+    }
+
+    fn has_particle(&self) -> bool {
+        self.particle.is_some()
+    }
+
+    fn is_root_node(&self) -> bool {
+        // because of how the quadtree is built, the 0th node should always be the root
+        self.id == 0
+    }
+
+    fn contains(&self, pos: &Vec2) -> bool {
+        contains(&self.bounds, pos)
+    }
 }
 
 impl QuadTree {
     fn new(particles: &Vec<(Entity, Vec2, Mass)>) -> Self {
-        let mut node_vec = Vec::new();
-        let hash_map: HashMap<Entity, usize> = HashMap::new();
+        let mut node_vec = Vec::with_capacity(particles.len() * 2);
+        let hash_map: HashMap<Entity, usize> = HashMap::with_capacity(particles.len());
         // we need to get a vec of Vec2 to make an aabb for the root node
         let positions: Vec<Vec2> = particles
             .iter()
@@ -65,6 +83,52 @@ impl QuadTree {
         }
     }
 
+    /// gives the child of a node given the parent and a number 0..=3
+    fn get_child(&mut self, node_id: usize, child: usize) -> &mut Node {
+        match child {
+            0..=3 => (),
+            _ => {
+                error!("attempted to retrive the child {child}, should be within 1..=4");
+                panic!()
+            }
+        }
+        let child_id = self
+            .get_node_mut(node_id)
+            .children
+            .expect("expected there to be children")
+            + child;
+        debug!("getting child {child} of node {node_id}, child id: {child_id}");
+        if let Some(child) = self.nodes.get_mut(child_id) {
+            return child;
+        } else {
+            error!("child {child} of node {node_id}, child id: {child_id} does not exist !!!");
+            panic!();
+        }
+    }
+
+    /// returns the id of a nodes child given the parent id and a number 0..=3
+    fn get_child_id(&self, node_id: usize, child_id: usize) -> usize {
+        self.get_node(node_id).children.expect("expected children") + child_id
+    }
+
+    fn get_node_mut(&mut self, node_id: usize) -> &mut Node {
+        if let Some(node) = self.nodes.get_mut(node_id) {
+            return node;
+        } else {
+            error!("failed to retrive node at id {node_id} as it did not exist");
+            panic!();
+        }
+    }
+
+    fn get_node(&self, node_id: usize) -> &Node {
+        if let Some(node) = self.nodes.get(node_id) {
+            return node;
+        } else {
+            error!("failed to retrive node at id {node_id} as it did not exist");
+            panic!();
+        }
+    }
+
     fn insert(
         &mut self,
         entity: Entity,
@@ -73,12 +137,41 @@ impl QuadTree {
         target_node: usize,
     ) -> &mut Self {
         {
-            let node = &self.nodes[target_node];
+            let node = &mut self.get_node_mut(target_node);
+            if node.is_leaf() && !node.has_particle() {
+                node.particle = Some((entity, position, mass));
+                return self;
+            }
+
+            if node.has_particle() && node.is_leaf() {
+                self.subdivide(target_node);
+            }
         }
-        self
+
+        for child_id in 0..=3 {
+            let child = self.get_child(target_node, child_id);
+            if child.contains(&position) {
+                debug!("child {child_id} of node {target_node} contains the particle.. inserting into node {}", self.get_child_id(target_node, child_id));
+                self.insert(
+                    entity,
+                    position,
+                    mass,
+                    self.get_child_id(target_node, child_id),
+                );
+                return self;
+            } else {
+                debug!("child {child_id} of node {target_node} does not contain the particle");
+                continue;
+            }
+        }
+        error!(
+            "was not able to find a node to insert the particle into!! target id: {target_node}"
+        );
+        panic!();
     }
 
     fn subdivide(&mut self, node_id: usize) -> &mut Self {
+        debug!("subdividing node {node_id}");
         let (aabbs, particle) = {
             if let Some(node) = self.nodes.get_mut(node_id) {
                 let (max, min, mid) = get_max_min_mid(&node.bounds);
@@ -101,6 +194,7 @@ impl QuadTree {
                         max: Vec2::new(max.x, mid.y),
                     },
                 ];
+                // return the new aabbs and the the particle that may or may not have been there
                 (aabbs, node.particle)
             } else {
                 error!(
@@ -111,16 +205,14 @@ impl QuadTree {
             }
         };
 
-        let mut new_node_ids = Vec::new();
+        let first_node_id = self.nodes.len();
 
-        for aabb in aabbs {
-            let id = self.nodes.len() + 1;
-            new_node_ids.push(id);
-            let new_node = Node::new(node_id, id, aabb);
+        for (child_num, aabb) in aabbs.iter().enumerate() {
+            let new_node = Node::new(node_id, first_node_id + child_num, *aabb);
             self.nodes.push(new_node);
         }
 
-        self.nodes[node_id].children = Some(new_node_ids.try_into().unwrap());
+        self.get_node_mut(node_id).children = Some(first_node_id);
 
         if let Some(particle) = particle {
             let (entity, position, mass) = particle;
@@ -138,6 +230,9 @@ impl QuadTree {
 
     pub fn render(&self, gizmos: &mut Gizmos) {
         for node in &self.nodes {
+            if node.is_leaf() && !node.has_particle() {
+                continue;
+            }
             let b = &node.bounds;
             let center = (b.max + b.min) / 2.0;
             let size = b.max - b.min;
@@ -163,6 +258,8 @@ pub fn quadtree_system(
     mut commands: Commands,
     particles: Query<(Entity, &Transform, &Mass), With<Particle>>,
 ) {
+    let start_time = Instant::now();
+
     if particles.is_empty() {
         debug!("skipping quadtree construction as there are no particles");
         return;
@@ -178,6 +275,10 @@ pub fn quadtree_system(
     for (entity, transform, mass) in particles {
         qt.insert(entity, transform, mass, 0);
     }
+
+    let finish_time = Instant::now();
+    let time_taken = finish_time - start_time;
+    debug!("built quadtree in {}ms", time_taken.as_millis());
 
     commands.insert_resource(qt);
 }
