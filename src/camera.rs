@@ -16,7 +16,7 @@ impl Plugin for CameraPlugin {
     }
 }
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Clone, Copy)]
 /// Resource that provides the current world coords of the camera
 pub struct CursorWorldCoords(pub Vec2);
 
