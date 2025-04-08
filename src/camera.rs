@@ -1,9 +1,8 @@
 use bevy::{
     input::mouse::{MouseMotion, MouseWheel},
+    prelude::*,
     window::PrimaryWindow,
 };
-
-use crate::*;
 
 const ZOOM_SENSITIVITY: f32 = 0.1;
 
@@ -33,7 +32,7 @@ fn zoom_camera(
     for event in mouse_scroll_events.read() {
         projection.scale += -event.y * ZOOM_SENSITIVITY * projection.scale;
     }
-    projection.scale = projection.scale.max(0.0)
+    projection.scale = projection.scale.max(0.0);
 }
 
 fn pan_camera(
