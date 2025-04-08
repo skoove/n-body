@@ -1,4 +1,3 @@
-#![warn(clippy::pedantic)]
 use bevy::log::{Level, LogPlugin};
 use bevy::prelude::*;
 use bevy::window::{CursorOptions, PresentMode};
