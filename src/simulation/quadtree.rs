@@ -64,14 +64,11 @@ impl Node {
 }
 
 impl QuadTree {
-    fn new(particles: &Vec<(Entity, Vec2, Mass)>) -> Self {
-        let mut node_vec = Vec::with_capacity(particles.len() * 2);
-        let hash_map: HashMap<Entity, usize> = HashMap::with_capacity(particles.len());
+    fn new(particles: impl Iterator<Item = (Entity, Vec2, Mass)>) -> Self {
+        let mut node_vec = Vec::new();
+        let hash_map: HashMap<Entity, usize> = HashMap::new();
         // we need to get a vec of Vec2 to make an aabb for the root node
-        let positions: Vec<Vec2> = particles
-            .iter()
-            .map(|(_, position, _)| position.clone())
-            .collect();
+        let positions: Vec<Vec2> = particles.map(|(_, position, _)| position).collect();
         let root_aabb = Aabb2d::from_point_cloud(Isometry2d::IDENTITY, &positions);
         let root_node = Node::new(0, 0, root_aabb);
 
@@ -220,7 +217,7 @@ impl QuadTree {
             let (entity, position, mass) = particle;
             self.insert(entity, position, mass, node_id);
         }
-        return self;
+        self
     }
 
     const QUADTREE_COLOR: Color = Color::Srgba(Srgba {
@@ -266,12 +263,11 @@ pub fn quadtree_system(
         return;
     }
 
-    let particles = particles
+    let mut particles = particles
         .iter()
-        .map(|(entity, transform, mass)| (entity, transform.translation.truncate(), mass.clone()))
-        .collect();
+        .map(|(entity, transform, mass)| (entity, transform.translation.truncate(), *mass));
 
-    let mut qt = QuadTree::new(&particles);
+    let mut qt = QuadTree::new(&mut particles);
 
     for (entity, transform, mass) in particles {
         qt.insert(entity, transform, mass, 0);
