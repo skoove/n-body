@@ -64,11 +64,11 @@ impl Node {
 }
 
 impl QuadTree {
-    fn new(particles: impl Iterator<Item = (Entity, Vec2, Mass)>) -> Self {
+    fn new(particles: &[(Entity, Vec2, Mass)]) -> Self {
         let mut node_vec = Vec::new();
         let hash_map: HashMap<Entity, usize> = HashMap::new();
         // we need to get a vec of Vec2 to make an aabb for the root node
-        let positions: Vec<Vec2> = particles.map(|(_, position, _)| position).collect();
+        let positions: Vec<Vec2> = particles.iter().map(|(_, position, _)| *position).collect();
         let root_aabb = Aabb2d::from_point_cloud(Isometry2d::IDENTITY, &positions);
         let root_node = Node::new(0, 0, root_aabb);
 
@@ -263,14 +263,15 @@ pub fn quadtree_system(
         return;
     }
 
-    let mut particles = particles
+    let particles = particles
         .iter()
-        .map(|(entity, transform, mass)| (entity, transform.translation.truncate(), *mass));
+        .map(|(entity, transform, mass)| (entity, transform.translation.truncate(), *mass))
+        .collect::<Vec<_>>();
 
-    let mut qt = QuadTree::new(&mut particles);
+    let mut qt = QuadTree::new(&particles);
 
-    for (entity, transform, mass) in particles {
-        qt.insert(entity, transform, mass, 0);
+    for (entity, transform, mass) in &particles {
+        qt.insert(*entity, *transform, *mass, 0);
     }
 
     let finish_time = Instant::now();
