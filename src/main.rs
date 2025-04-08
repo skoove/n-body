@@ -1,6 +1,3 @@
-#![warn(clippy::pedantic)]
-#![allow(clippy::needless_pass_by_value)]
-
 use bevy::log::{Level, LogPlugin};
 use bevy::prelude::*;
 use bevy::window::{CursorOptions, PresentMode};
