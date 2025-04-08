@@ -1,11 +1,10 @@
-use std::collections::VecDeque;
-
 use bevy::prelude::*;
 use bevy_egui::{
     egui::{self, Slider},
     EguiContexts,
 };
 use egui_plot::{Line, Plot, PlotPoints};
+use std::collections::VecDeque;
 
 pub struct PreformanceGuiPlugin;
 
@@ -22,7 +21,7 @@ impl Plugin for PreformanceGuiPlugin {
 }
 
 #[derive(Resource, Debug)]
-/// [VecDeque] of past performance data
+/// [`VecDeque`] of past performance data
 pub struct PerformanceData {
     pub frame_time: VecDeque<f32>,
 }
@@ -30,7 +29,7 @@ pub struct PerformanceData {
 #[derive(Resource)]
 /// Settings for display of performance data
 struct PerformanceGuiSettings {
-    history_to_show: i32,
+    history_to_show: usize,
 }
 
 fn performance_gui(
@@ -43,7 +42,7 @@ fn performance_gui(
         .frame_time
         .push_back(time.delta_secs() * 1000.0);
 
-    while performance_data.frame_time.len() > gui_settings.history_to_show as usize {
+    while performance_data.frame_time.len() > gui_settings.history_to_show {
         performance_data.frame_time.pop_front();
     }
 
