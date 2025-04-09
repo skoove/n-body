@@ -16,7 +16,7 @@ pub struct QuadTree {
 struct Node {
     bounds: Aabb2d,
     _parent_id: usize,
-    _id: usize,
+    id: usize,
     // This is the index of the first child, the rest will be just +1 +2 and +3
     children: Option<usize>,
     particle: Option<(Entity, Vec2, Mass)>,
@@ -37,7 +37,7 @@ impl Node {
         Self {
             bounds,
             _parent_id: parent_id,
-            _id: id,
+            id,
             children: None,
             particle: None,
             _center_of_mass: mid,
@@ -55,7 +55,7 @@ impl Node {
 
     fn _is_root_node(&self) -> bool {
         // because of how the quadtree is built, the 0th node should always be the root
-        self._id == 0
+        self.id == 0
     }
 
     fn contains(&self, pos: &Vec2) -> bool {
@@ -126,43 +126,22 @@ impl QuadTree {
         panic!();
     }
 
-    fn insert(
-        &mut self,
-        entity: Entity,
-        position: Vec2,
-        mass: Mass,
-        target_node: usize,
-    ) -> &mut Self {
-        {
-            let node = &mut self.get_node_mut(target_node);
-            if node.is_leaf() && !node.has_particle() {
-                node.particle = Some((entity, position, mass));
-                return self;
-            }
+    fn insert(&mut self, entity: Entity, position: Vec2, mass: Mass) {
+        let mut id_to_subdivide: Option<usize> = None;
 
-            if node.has_particle() && node.is_leaf() {
-                self.subdivide(target_node);
+        for node in self.nodes.iter_mut().rev() {
+            if node.is_leaf() && node.contains(&position) {
+                if node.has_particle() {
+                    id_to_subdivide = Some(node.id);
+                } else {
+                    node.particle = Some((entity, position, mass))
+                };
             }
         }
 
-        for child_id in 0..=3 {
-            let child = self.get_child(target_node, child_id);
-            if child.contains(&position) {
-                self.insert(
-                    entity,
-                    position,
-                    mass,
-                    self.get_child_id(target_node, child_id),
-                );
-                return self;
-            }
-
-            continue;
-        }
-        error!(
-            "was not able to find a node to insert the particle into!! target id: {target_node}"
-        );
-        panic!();
+        if let Some(id) = id_to_subdivide {
+            self.subdivide(id);
+        };
     }
 
     fn subdivide(&mut self, node_id: usize) -> &mut Self {
@@ -211,7 +190,7 @@ impl QuadTree {
 
         if let Some(particle) = particle {
             let (entity, position, mass) = particle;
-            self.insert(entity, position, mass, node_id);
+            self.insert(entity, position, mass);
         }
         self
     }
@@ -267,7 +246,7 @@ pub fn quadtree_system(
     let mut qt = QuadTree::new(&particles);
 
     for (entity, transform, mass) in &particles {
-        qt.insert(*entity, *transform, *mass, 0);
+        qt.insert(*entity, *transform, *mass);
     }
 
     let finish_time = Instant::now();
