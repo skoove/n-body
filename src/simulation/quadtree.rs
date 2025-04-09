@@ -204,9 +204,10 @@ impl QuadTree {
 
     pub fn render(&self, gizmos: &mut Gizmos) {
         for node in &self.nodes {
-            if node.is_leaf() && !node.has_particle() {
+            if node.children.is_none() {
                 continue;
             }
+
             let b = &node.bounds;
             let center = (b.max + b.min) / 2.0;
             let size = b.max - b.min;
@@ -230,6 +231,7 @@ fn get_max_min_center(aabb: &Aabb2d) -> (Vec2, Vec2, Vec2) {
 pub fn quadtree_system(
     mut commands: Commands,
     particles: Query<(Entity, &Transform, &Mass), With<Particle>>,
+    quadtree: Option<ResMut<QuadTree>>,
 ) {
     let start_time = Instant::now();
 
@@ -251,7 +253,11 @@ pub fn quadtree_system(
 
     let finish_time = Instant::now();
     let time_taken = finish_time - start_time;
-    debug!("built quadtree in {}ms", time_taken.as_millis());
+    info!("built quadtree in {}ms", time_taken.as_millis());
 
-    commands.insert_resource(qt);
+    if let Some(mut quadtree) = quadtree {
+        *quadtree = qt;
+    } else {
+        commands.insert_resource(qt);
+    }
 }
