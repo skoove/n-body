@@ -95,8 +95,6 @@ impl QuadTree {
             .expect("expected there to be children")
             + child;
 
-        debug!("getting child {child} of node {node_id}, child id: {child_id}");
-
         if let Some(child) = self.nodes.get_mut(child_id) {
             return child;
         }
@@ -150,7 +148,6 @@ impl QuadTree {
         for child_id in 0..=3 {
             let child = self.get_child(target_node, child_id);
             if child.contains(&position) {
-                debug!("child {child_id} of node {target_node} contains the particle.. inserting into node {}", self.get_child_id(target_node, child_id));
                 self.insert(
                     entity,
                     position,
@@ -160,7 +157,6 @@ impl QuadTree {
                 return self;
             }
 
-            debug!("child {child_id} of node {target_node} does not contain the particle");
             continue;
         }
         error!(
