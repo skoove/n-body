@@ -215,7 +215,8 @@ impl QuadTree {
 
         if let Some(particle) = particle {
             let (entity, position, mass) = particle;
-            self.insert(entity, position, mass, node_id);
+            seluse criterion::{black_box, criterion_group, criterion_main, Criterion};
+use mycrate::fibonacci;f.insert(entity, position, mass, node_id);
         }
         self
     }
