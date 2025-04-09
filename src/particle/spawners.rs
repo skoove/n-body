@@ -1,8 +1,7 @@
 use std::f32::consts::PI;
 
 use bevy::prelude::*;
-use rand::{random_range, Rng, SeedableRng};
-use rand_pcg::Pcg32;
+use rand::random_range;
 
 use super::ParticleBundle;
 
@@ -15,7 +14,6 @@ pub struct SpawnRandomParticles {
     velocity_range: f32,
     value_variation: bool,
     position: Vec2,
-    seed: Option<u64>,
 }
 
 impl SpawnRandomParticles {
@@ -30,7 +28,6 @@ impl SpawnRandomParticles {
             mass: 1.0,
             velocity_range: 0.0,
             position: Vec2::ZERO,
-            seed: None,
         }
     }
 
@@ -82,35 +79,21 @@ impl SpawnRandomParticles {
         self
     }
 
-    /// For seeding the random positions, not setting this results in complete randomness
-    pub fn random_seed(mut self, random_seed: u64) -> Self {
-        self.seed = Some(random_seed);
-        self
-    }
-
     /// Spawn the particles
     pub fn spawn(self, commands: &mut Commands) {
-        let mut rng: Pcg32;
-        if let Some(seed) = self.seed {
-            debug!("seed specified, using: {seed}");
-            rng = Pcg32::seed_from_u64(seed);
-        } else {
-            debug!("no seed specified, generating random from os rng");
-            rng = Pcg32::from_os_rng();
-        }
         for i in 0..self.amount {
             let mut value = 1.0;
             if self.value_variation {
                 value = (i as f32 / self.amount as f32) * 0.8 + 0.2;
             }
-            let angle = rng.random_range(0.0..2.0 * PI);
-            let distance = rng.random_range(self.inner_radius..self.outer_radius);
+            let angle = random_range(0.0..2.0 * PI);
+            let distance = random_range(self.inner_radius..self.outer_radius);
             let position = self.position + Vec2::from_angle(angle) * distance;
             let mut velocity = Vec2::ZERO;
 
             if self.velocity_range != 0.0 {
-                let velo_angle = rng.random_range(0.0..2.0 * PI);
-                let velo = rng.random_range(0.0..=self.velocity_range);
+                let velo_angle = random_range(0.0..2.0 * PI);
+                let velo = random_range(0.0..=self.velocity_range);
                 velocity = Vec2::from_angle(velo_angle) * velo;
             }
 
