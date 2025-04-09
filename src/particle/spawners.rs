@@ -81,11 +81,7 @@ impl SpawnRandomParticles {
 
     /// Spawn the particles
     pub fn spawn(self, commands: &mut Commands) {
-        for i in 0..self.amount {
-            let mut value = 1.0;
-            if self.value_variation {
-                value = (i as f32 / self.amount as f32) * 0.8 + 0.2;
-            }
+        for _ in 0..self.amount {
             let angle = random_range(0.0..2.0 * PI);
             let distance = random_range(self.inner_radius..self.outer_radius);
             let position = self.position + Vec2::from_angle(angle) * distance;
@@ -99,7 +95,6 @@ impl SpawnRandomParticles {
 
             ParticleBundle::new()
                 .radius(self.radius)
-                .color(Color::hsv(0.0, 0.0, value))
                 .position(position)
                 .velocity(velocity)
                 .mass(self.mass)
@@ -215,19 +210,13 @@ pub fn particle_hose_system(
         }
 
         let velocity = hose.direction.normalize() * hose.velocity;
-        let mut color = Color::WHITE;
-        if hose.rainbow {
-            let hue = (hose.amount as f32 / hose.start_amount as f32) * 360.0;
-            color = Color::hsv(hue, 1.0, 1.0);
-        }
 
         commands.spawn(
             ParticleBundle::new()
                 .radius(hose.radius)
                 .mass(hose.mass)
                 .position(hose.position)
-                .velocity(velocity)
-                .color(color),
+                .velocity(velocity),
         );
 
         hose.amount -= 1;

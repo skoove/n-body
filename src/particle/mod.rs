@@ -1,5 +1,5 @@
-use bevy::color::Color;
 use bevy::prelude::*;
+use bevy::render::mesh::CircleMeshBuilder;
 
 use crate::simulation;
 use crate::simulation::motion::Acceleration;
@@ -12,7 +12,8 @@ pub struct ParticlePlugin;
 
 impl Plugin for ParticlePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (show_particles, count_particles))
+        app.add_systems(Startup, init_particle_mesh_and_material)
+            .add_systems(Update, (give_particles_materials, count_particles))
             .add_systems(
                 FixedUpdate,
                 (spawners::particle_hose_system).run_if(simulation::sim_not_paused),
@@ -20,6 +21,12 @@ impl Plugin for ParticlePlugin {
             .init_resource::<ParticleCount>();
     }
 }
+
+#[derive(Resource)]
+pub struct ParticleColorMaterial(Handle<ColorMaterial>);
+
+#[derive(Resource)]
+pub struct ParticleMesh(Handle<Mesh>);
 
 #[derive(Component)]
 pub struct Particle;
@@ -30,10 +37,6 @@ pub struct Radius(pub f32);
 #[derive(Component, Clone, Copy, Debug)]
 pub struct Mass(pub f32);
 
-/// The color **at spawn** of an entity. To change color use [`set_color()`]
-#[derive(Component)]
-pub struct SpawnColor(bevy::color::Color);
-
 #[derive(Bundle)]
 pub struct ParticleBundle {
     particle: Particle,
@@ -43,7 +46,6 @@ pub struct ParticleBundle {
     old_position: OldPosition,
     acceleration: Acceleration,
     previous_acceleration: PreviousAcceleration,
-    color: SpawnColor,
 }
 
 impl ParticleBundle {
@@ -55,7 +57,6 @@ impl ParticleBundle {
             position: Transform::from_xyz(0.0, 0.0, 0.0),
             old_position: OldPosition(Transform::from_xyz(0.0, 0.0, 0.0)),
             acceleration: Acceleration(Vec2::ZERO),
-            color: SpawnColor(Color::hsv(0.0, 0.0, 1.00)),
             previous_acceleration: PreviousAcceleration(Vec2::ZERO),
         }
     }
@@ -69,7 +70,6 @@ impl ParticleBundle {
             position: self.position,
             old_position: self.old_position,
             acceleration: self.acceleration,
-            color: self.color,
             previous_acceleration: self.previous_acceleration,
         });
     }
@@ -103,55 +103,44 @@ impl ParticleBundle {
         self.old_position.0.translation = self.position.translation - velo.extend(0.0);
         self
     }
+}
 
-    /// Set the color of the spawned particle
-    /// default: white
-    #[allow(dead_code)]
-    pub fn color(mut self, color: Color) -> Self {
-        self.color = SpawnColor(color);
-        self
-    }
+fn init_particle_mesh_and_material(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    let material = ColorMaterial::from_color(Color::srgb(1.0, 1.0, 1.0));
+    let mesh = CircleMeshBuilder::new(1.0, 10);
+    let mesh_handle = meshes.add(mesh);
+    let material_handle = materials.add(material);
+    commands.insert_resource(ParticleMesh(mesh_handle));
+    commands.insert_resource(ParticleColorMaterial(material_handle));
 }
 
 #[allow(clippy::type_complexity)] // sorry clippy i kinda need it
-fn show_particles(
+fn give_particles_materials(
     mut commands: Commands,
     mut query: Query<
-        (Entity, &Radius, &mut Transform, &SpawnColor),
+        (Entity, &Radius, &mut Transform),
         (
             With<Particle>,
             Without<MeshMaterial2d<ColorMaterial>>,
             Without<Mesh2d>,
         ),
     >,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mesh: Res<ParticleMesh>,
+    material: Res<ParticleColorMaterial>,
 ) {
-    let mesh = meshes.add(Circle::new(1.0));
+    let material_handle = material.0.clone();
+    let mesh_handle = mesh.0.clone();
 
-    for (entity, radius, mut transform, SpawnColor(color)) in query.iter_mut() {
+    for (entity, radius, mut transform) in query.iter_mut() {
         transform.scale = Vec3::splat(radius.0);
-        let material_handle = materials.add(ColorMaterial::from_color(*color));
-        let material = MeshMaterial2d(material_handle);
-        commands
-            .entity(entity)
-            .insert((Mesh2d(mesh.clone()), material.clone()));
+        let material = MeshMaterial2d(material_handle.clone());
+        let mesh = Mesh2d(mesh_handle.clone());
+        commands.entity(entity).insert((mesh, material));
     }
-}
-
-/// Set the colour of a given [ColorMaterial]
-#[allow(dead_code)] // it will definitly be used at some point
-pub fn set_color(
-    materials: &mut ResMut<Assets<ColorMaterial>>,
-    handle: Handle<ColorMaterial>,
-    color: Color,
-) {
-    if let Some(material) = materials.get_mut(&handle) {
-        material.color = color;
-        debug!("setting to {:#?}", color)
-    } else {
-        error!("failed to find a material: {:?}", handle)
-    };
 }
 
 #[derive(Resource, Default)]
@@ -178,12 +167,10 @@ mod tests {
             .velocity(Vec2::new(5.0, 10.0))
             .radius(15.0)
             .mass(500.0)
-            .color(Color::srgb(0.5, 0.5, 0.5))
     }
 
     #[test]
     fn test_particle_bundle_builder() {
-        use super::SpawnColor;
         use bevy::prelude::*;
 
         let pos = Vec2::new(100.0, 200.0);
@@ -197,8 +184,6 @@ mod tests {
         assert_eq!(bundle.old_position.0.translation, expected_old);
         assert_eq!((bundle.radius).0, 15.0);
         assert_eq!((bundle.mass).0, 500.0);
-        let SpawnColor(col) = bundle.color;
-        assert_eq!(col, Color::srgb(0.5, 0.5, 0.5));
     }
 
     #[test]
@@ -256,24 +241,6 @@ mod tests {
 
         let particle_count = app.world_mut().query::<&Particle>().iter(app.world()).len();
         assert_eq!(particle_count, 1);
-    }
-
-    #[test]
-    fn test_set_color() {
-        use super::set_color;
-        use bevy::prelude::*;
-
-        let mut app = App::new();
-
-        app.add_systems(Update, update);
-        app.insert_resource(Assets::<ColorMaterial>::default());
-        app.update();
-
-        fn update(mut materials: ResMut<Assets<ColorMaterial>>) {
-            let handle = materials.add(ColorMaterial::from(Color::WHITE));
-            set_color(&mut materials, handle.clone(), Color::BLACK);
-            assert_eq!(materials.get(&handle).unwrap().color, Color::BLACK);
-        }
     }
 
     #[test]
