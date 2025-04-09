@@ -80,45 +80,8 @@ impl QuadTree {
         }
     }
 
-    /// gives the child of a node given the parent and a number 0..=3
-    fn get_child(&mut self, node_id: usize, child: usize) -> &mut Node {
-        match child {
-            0..=3 => (),
-            _ => {
-                error!("attempted to retrive the child {child}, should be within 1..=4");
-                panic!()
-            }
-        }
-        let child_id = self
-            .get_node_mut(node_id)
-            .children
-            .expect("expected there to be children")
-            + child;
-
-        if let Some(child) = self.nodes.get_mut(child_id) {
-            return child;
-        }
-
-        error!("child {child} of node {node_id}, child id: {child_id} does not exist !!!");
-        panic!();
-    }
-
-    /// returns the id of a nodes child given the parent id and a number 0..=3
-    fn get_child_id(&self, node_id: usize, child_id: usize) -> usize {
-        self.get_node(node_id).children.expect("expected children") + child_id
-    }
-
     fn get_node_mut(&mut self, node_id: usize) -> &mut Node {
         if let Some(node) = self.nodes.get_mut(node_id) {
-            return node;
-        }
-
-        error!("failed to retrive node at id {node_id} as it did not exist");
-        panic!();
-    }
-
-    fn get_node(&self, node_id: usize) -> &Node {
-        if let Some(node) = self.nodes.get(node_id) {
             return node;
         }
 
