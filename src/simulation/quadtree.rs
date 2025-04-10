@@ -132,7 +132,9 @@ impl QuadTree {
                     },
                 ];
                 // return the new aabbs and the the particle that may or may not have been there
-                (aabbs, node.particle)
+                let particle = node.particle;
+                node.particle = None;
+                (aabbs, particle)
             } else {
                 error!(
                     "failed to subdivide node at id: {} beacuse it did not exist!",
@@ -167,10 +169,6 @@ impl QuadTree {
 
     pub fn render(&self, gizmos: &mut Gizmos) {
         for node in &self.nodes {
-            if node.children.is_none() {
-                continue;
-            }
-
             let b = &node.bounds;
             let center = (b.max + b.min) / 2.0;
             let size = b.max - b.min;
@@ -203,10 +201,12 @@ pub fn quadtree_system(
         return;
     }
 
-    let particles = particles
+    let mut particles = particles
         .iter()
         .map(|(entity, transform, mass)| (entity, transform.translation.truncate(), *mass))
         .collect::<Vec<_>>();
+
+    particles.sort_by(|a, b| a.1.x.partial_cmp(&b.1.x).unwrap());
 
     let mut qt = QuadTree::new(&particles);
 
