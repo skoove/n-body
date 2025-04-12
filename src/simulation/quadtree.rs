@@ -1,4 +1,7 @@
-use std::{collections::hash_map::HashMap, time::Instant};
+use std::{
+    collections::{hash_map::HashMap, HashSet},
+    time::Instant,
+};
 
 use crate::particle::{Mass, Particle};
 use bevy::{math::bounding::Aabb2d, prelude::*};
@@ -99,6 +102,8 @@ impl QuadTree {
                 } else {
                     node.particle = Some((entity, position, mass))
                 };
+
+                break;
             }
         }
 
@@ -132,8 +137,7 @@ impl QuadTree {
                     },
                 ];
                 // return the new aabbs and the the particle that may or may not have been there
-                let particle = node.particle;
-                node.particle = None;
+                let particle = node.particle.take();
                 (aabbs, particle)
             } else {
                 error!(
@@ -175,6 +179,47 @@ impl QuadTree {
             gizmos.rect_2d(center, size, Self::QUADTREE_COLOR);
         }
     }
+
+    fn visualize_from_root(&self) {
+        self.visualize(0, 0, &mut HashSet::new());
+    }
+
+    fn visualize(&self, node: usize, indent: usize, visited: &mut HashSet<usize>) {
+        if !visited.insert(node) {
+            return;
+        }
+
+        let indent_string = "  │".repeat(indent);
+
+        if let Some(current_node) = self.nodes.get(node) {
+            let mut particle_string = "";
+            let mut leaf_string = "";
+
+            if current_node.has_particle() {
+                particle_string = " [contains particle]"
+            }
+
+            if current_node.is_leaf() {
+                leaf_string = " [is leaf]"
+            }
+
+            let id = current_node.id;
+            println!("{indent_string} node {id}{leaf_string}{particle_string}");
+
+            if let Some(children_start) = current_node.children {
+                let children = [
+                    children_start,
+                    children_start + 1,
+                    children_start + 2,
+                    children_start + 3,
+                ];
+
+                for &child in children.iter() {
+                    self.visualize(child, indent + 1, visited);
+                }
+            }
+        }
+    }
 }
 
 /// Checks if a aabb contains a point ( why is this not in the crate?? )
@@ -213,6 +258,8 @@ pub fn quadtree_system(
     for (entity, transform, mass) in &particles {
         qt.insert(*entity, *transform, *mass);
     }
+
+    // qt.visualize_from_root();
 
     let finish_time = Instant::now();
     let time_taken = finish_time - start_time;

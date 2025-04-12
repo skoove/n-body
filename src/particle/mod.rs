@@ -132,13 +132,14 @@ fn give_particles_materials(
     mesh: Res<ParticleMesh>,
     material: Res<ParticleColorMaterial>,
 ) {
-    let material_handle = material.0.clone();
-    let mesh_handle = mesh.0.clone();
+    if query.is_empty() {
+        return;
+    }
 
     for (entity, radius, mut transform) in query.iter_mut() {
         transform.scale = Vec3::splat(radius.0);
-        let material = MeshMaterial2d(material_handle.clone());
-        let mesh = Mesh2d(mesh_handle.clone());
+        let material = MeshMaterial2d(material.0.clone_weak());
+        let mesh = Mesh2d(mesh.0.clone_weak());
         commands.entity(entity).insert((mesh, material));
     }
 }
