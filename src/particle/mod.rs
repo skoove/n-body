@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy::render::mesh::CircleMeshBuilder;
 
 use crate::simulation;
 use crate::simulation::motion::Acceleration;
@@ -111,7 +110,7 @@ fn init_particle_mesh_and_material(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let material = ColorMaterial::from_color(Color::srgb(1.0, 1.0, 1.0));
-    let mesh = CircleMeshBuilder::new(1.0, 10);
+    let mesh = Circle::new(1.0);
     let mesh_handle = meshes.add(mesh);
     let material_handle = materials.add(material);
     commands.insert_resource(ParticleMesh(mesh_handle));
@@ -131,6 +130,7 @@ fn give_particles_materials(
     >,
     mesh: Res<ParticleMesh>,
     material: Res<ParticleColorMaterial>,
+    mut meshes: ResMut<Assets<Mesh>>,
 ) {
     if query.is_empty() {
         return;
@@ -138,8 +138,8 @@ fn give_particles_materials(
 
     for (entity, radius, mut transform) in query.iter_mut() {
         transform.scale = Vec3::splat(radius.0);
-        let material = MeshMaterial2d(material.0.clone_weak());
-        let mesh = Mesh2d(mesh.0.clone_weak());
+        let material = MeshMaterial2d(material.0.clone());
+        let mesh = Mesh2d(mesh.0.clone());
         commands.entity(entity).insert((mesh, material));
     }
 }

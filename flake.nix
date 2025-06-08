@@ -27,6 +27,7 @@
       rustfmt
       mold
       rustc
+      stdenv.cc.cc.lib
     ];
   in {
     devShells.${system}.default = pkgs.mkShell {
@@ -41,6 +42,7 @@
         ])
         clang
         pkg-config
+        tracy-wayland
       ] ++ librarys;
 
       LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath librarys}";
