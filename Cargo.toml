@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy = { version = "0.15", features = ["wayland"] }
-bevy_egui = {version = "0.33", features = ["bevy_picking"]}
-egui_plot = "0.31"
+bevy = { version = "0.16", features = ["wayland"] }
+bevy_egui = {version = "0.34", features = ["bevy_picking"]}
+egui_plot = "0.32"
 rand = "0.9"
 rand_pcg = "0.9"
 
