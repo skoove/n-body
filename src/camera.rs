@@ -1,5 +1,7 @@
+use core::panic;
+
 use bevy::{
-    input::mouse::{MouseMotion, MouseWheel},
+    input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll, MouseMotion, MouseWheel},
     prelude::*,
     window::PrimaryWindow,
 };
@@ -24,30 +26,53 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn((Camera2d, Transform::default()));
 }
 
+// fn zoom_camera(
+//     mut cam_q: Query<&mut Projection>,
+//     mut mouse_scroll_events: EventReader<MouseWheel>,
+// ) {
+//     let projection = cam_q.single_mut().unwrap();
+
+//     let mut orthographic = if let Projection::Orthographic(ortho) = projection {
+//         ortho
+//     } else {
+//         panic!("othographic prohjection was not there :((")
+//     };
+
+//     for event in mouse_scroll_events.read() {
+//         orthographic.scale += -event.y * ZOOM_SENSITIVITY * orthographic.scale;
+//     }
+//     orthographic.scale = orthographic.scale.max(0.0);
+// }
+
 fn zoom_camera(
-    mut cam_q: Query<&mut OrthographicProjection>,
-    mut mouse_scroll_events: EventReader<MouseWheel>,
+    mouse_wheel: Res<AccumulatedMouseScroll>,
+    camera_query: Single<&mut Projection, With<Camera>>,
 ) {
-    let mut projection = cam_q.single_mut();
-    for event in mouse_scroll_events.read() {
-        projection.scale += -event.y * ZOOM_SENSITIVITY * projection.scale;
+    match *camera_query.into_inner() {
+        Projection::Orthographic(ref mut orthographic) => {
+            orthographic.scale *= mouse_wheel.delta.y;
+        }
+        _ => (),
     }
-    projection.scale = projection.scale.max(0.0);
 }
 
 fn pan_camera(
-    mut cam_q: Query<(&mut Transform, &OrthographicProjection), With<Camera2d>>,
-    mut mouse_movement_events: EventReader<MouseMotion>,
+    camera_query: Single<(&mut Transform, &Projection), With<Camera>>,
+    mouse_movement: Res<AccumulatedMouseMotion>,
     mouse_button_events: Res<ButtonInput<MouseButton>>,
 ) {
     if mouse_button_events.pressed(MouseButton::Right) {
-        let (mut camera_transform, projection) = cam_q.single_mut();
+        let (mut camera_transform, projection) = camera_query.into_inner();
 
-        for event in mouse_movement_events.read() {
-            let new_pos = camera_transform.translation.truncate()
-                + (event.delta.with_x(-event.delta.x) * projection.scale);
-            camera_transform.translation = new_pos.extend(0.0);
-        }
+        let projection = match projection {
+            Projection::Orthographic(projection) => projection,
+            _ => {
+                error!("failed to find orthographic projection!");
+                return ();
+            }
+        };
+
+        camera_transform.translation += mouse_movement.delta.extend(0.0);
     }
 }
 
