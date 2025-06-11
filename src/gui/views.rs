@@ -9,10 +9,10 @@ pub struct ViewsPlugin;
 
 impl Plugin for ViewsPlugin {
     fn build(&self, app: &mut App) {
+        app.add_systems(EguiContextPass, (views_gui,));
         app.add_systems(
-            EguiContextPass,
+            Update,
             (
-                views_gui,
                 render_velocity_arrows,
                 render_acceleration_arrows,
                 render_quad_tree,

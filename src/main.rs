@@ -45,6 +45,6 @@ fn main() {
             SimPlugin,
             ParticlePlugin,
         ))
-        .insert_resource(ClearColor(Color::BLACK))
+        .insert_resource(ClearColor(Color::srgb_u8(0x28, 0x28, 0x28)))
         .run();
 }
