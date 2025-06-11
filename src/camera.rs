@@ -26,24 +26,6 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn((Camera2d, Transform::default()));
 }
 
-// fn zoom_camera(
-//     mut cam_q: Query<&mut Projection>,
-//     mut mouse_scroll_events: EventReader<MouseWheel>,
-// ) {
-//     let projection = cam_q.single_mut().unwrap();
-
-//     let mut orthographic = if let Projection::Orthographic(ortho) = projection {
-//         ortho
-//     } else {
-//         panic!("othographic prohjection was not there :((")
-//     };
-
-//     for event in mouse_scroll_events.read() {
-//         orthographic.scale += -event.y * ZOOM_SENSITIVITY * orthographic.scale;
-//     }
-//     orthographic.scale = orthographic.scale.max(0.0);
-// }
-
 fn zoom_camera(
     mouse_wheel: Res<AccumulatedMouseScroll>,
     camera_query: Single<&mut Projection, With<Camera>>,
@@ -77,19 +59,20 @@ fn pan_camera(
 }
 
 /// stolen from <https://bevy-cheatbook.github.io/cookbook/cursor2world.html>
+/// modifed for bevy 1.16
 fn get_world_coords(
     mut mycoords: ResMut<CursorWorldCoords>,
     // query to get the window (so we can read the current cursor position)
-    q_window: Query<&Window, With<PrimaryWindow>>,
+    q_window: Single<&Window, With<PrimaryWindow>>,
     // query to get camera transform
-    q_camera: Query<(&Camera, &GlobalTransform), With<Camera2d>>,
+    q_camera: Single<(&Camera, &GlobalTransform), With<Camera2d>>,
 ) {
     // get the camera info and transform
     // assuming there is exactly one main camera entity, so Query::single() is OK
-    let (camera, camera_transform) = q_camera.single();
+    let (camera, camera_transform) = *q_camera;
 
     // There is only one primary window, so we can similarly get it from the query:
-    let window = q_window.single();
+    let window = q_window;
 
     // check if the cursor is inside the window and get its position
     // then, ask bevy to convert into world coordinates, and truncate to discard Z

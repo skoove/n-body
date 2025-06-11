@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_egui::{egui, EguiContexts};
+use bevy_egui::{egui, EguiContextPass, EguiContexts};
 
 use crate::camera::{self};
 use crate::particle::{spawners, ParticleBundle};
@@ -8,7 +8,7 @@ pub struct ToolsGuiPlugin;
 
 impl Plugin for ToolsGuiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (tools_gui, tool_behaviours))
+        app.add_systems(EguiContextPass, (tools_gui, tool_behaviours))
             .init_resource::<Tool>()
             .init_resource::<ToolSettings>();
     }

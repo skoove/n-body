@@ -1,12 +1,13 @@
 use bevy::prelude::*;
 use bevy_egui::egui;
+use bevy_egui::EguiContextPass;
 use bevy_egui::EguiContexts;
 
 pub struct DebugPlugin;
 
 impl Plugin for DebugPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, debug_gui);
+        app.add_systems(EguiContextPass, debug_gui);
     }
 }
 
