@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_egui::{
     egui::{self, Slider},
-    EguiContexts,
+    EguiContextPass, EguiContexts,
 };
 use egui_plot::{Line, Plot, PlotPoints};
 use std::collections::VecDeque;
@@ -10,7 +10,7 @@ pub struct PreformanceGuiPlugin;
 
 impl Plugin for PreformanceGuiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, performance_gui)
+        app.add_systems(EguiContextPass, performance_gui)
             .insert_resource(PerformanceData {
                 frame_time: [0.0].into(),
             })
@@ -77,7 +77,9 @@ fn performance_gui(
             .set_margin_fraction(egui::Vec2::new(0.0, 0.0))
             .include_x(0.0)
             .x_axis_label("frame")
-            .show(ui, |plot_fn| plot_fn.line(Line::new(frame_time_plot)));
+            .show(ui, |plot_fn| {
+                plot_fn.line(Line::new("what", frame_time_plot))
+            });
 
         ui.add(Slider::new(&mut gui_settings.history_to_show, 1..=500).text("history to show"))
     });

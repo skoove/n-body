@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_egui::{egui, EguiContexts};
+use bevy_egui::{egui, EguiContextPass, EguiContexts};
 
 use crate::particle::Particle;
 use crate::simulation::motion::{OldPosition, PreviousAcceleration};
@@ -10,7 +10,7 @@ pub struct ViewsPlugin;
 impl Plugin for ViewsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            Update,
+            EguiContextPass,
             (
                 views_gui,
                 render_velocity_arrows,

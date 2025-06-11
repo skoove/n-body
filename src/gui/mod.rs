@@ -17,7 +17,9 @@ pub struct GuiPlugin;
 impl Plugin for GuiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
-            EguiPlugin,
+            EguiPlugin {
+                enable_multipass_for_primary_context: true,
+            },
             PreformanceGuiPlugin,
             SimulationControlsGuiPlugin,
             ToolsGuiPlugin,

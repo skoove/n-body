@@ -2,13 +2,13 @@ use std::time::Duration;
 
 use crate::{particle, simulation::SimSettings};
 use bevy::prelude::*;
-use bevy_egui::{egui, EguiContexts};
+use bevy_egui::{egui, EguiContextPass, EguiContexts};
 
 pub struct SimulationControlsGuiPlugin;
 
 impl Plugin for SimulationControlsGuiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, sim_controls_gui)
+        app.add_systems(EguiContextPass, sim_controls_gui)
             .insert_resource(MaxDelta(32));
     }
 }
