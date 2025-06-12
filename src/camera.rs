@@ -6,7 +6,9 @@ use bevy::{
     window::PrimaryWindow,
 };
 
-const ZOOM_SENSITIVITY: f32 = 0.1;
+const ZOOM_DAMPING: f32 = 5.0;
+const ZOOM_SENSITIVITY: f32 = 3.0;
+
 const PAN_DAMPING: f32 = 5.0;
 const PAN_SENSITIVITY: f32 = 10.0;
 
@@ -25,7 +27,10 @@ impl Plugin for CameraPlugin {
 pub struct CursorWorldCoords(pub Vec2);
 
 #[derive(Component, Default)]
-struct CameraVelocity(Vec3);
+struct CameraVelocity {
+    position: Vec3,
+    zoom: f32,
+}
 
 fn setup_camera(mut commands: Commands) {
     commands.spawn((Camera2d, Transform::default(), CameraVelocity::default()));
@@ -33,11 +38,16 @@ fn setup_camera(mut commands: Commands) {
 
 fn zoom_camera(
     mouse_wheel: Res<AccumulatedMouseScroll>,
-    camera_query: Single<&mut Projection, With<Camera>>,
+    camera_query: Single<(&mut Projection, &mut CameraVelocity), With<Camera>>,
+    time: Res<Time>,
 ) {
-    match *camera_query.into_inner() {
+    let (mut projection, mut velocity) = camera_query.into_inner();
+    match *projection {
         Projection::Orthographic(ref mut orthographic) => {
-            orthographic.scale -= mouse_wheel.delta.y * ZOOM_SENSITIVITY * orthographic.scale;
+            velocity.zoom += mouse_wheel.delta.y * ZOOM_SENSITIVITY;
+            velocity.zoom *= (1.0 - ZOOM_DAMPING * time.delta_secs()).max(0.0);
+            orthographic.scale -= orthographic.scale * velocity.zoom * time.delta_secs();
+            orthographic.scale = orthographic.scale.max(0.01)
         }
         _ => (),
     }
@@ -61,12 +71,12 @@ fn pan_camera(
 
     if mouse_button_events.pressed(MouseButton::Right) {
         let delta = mouse_movement.delta.reflect(Vec2::X).extend(0.0) * projection.scale;
-        velocity.0 += delta * PAN_SENSITIVITY;
+        velocity.position += delta * PAN_SENSITIVITY;
     }
 
-    transform.translation += velocity.0 * time.delta_secs();
+    transform.translation += velocity.position * time.delta_secs();
 
-    velocity.0 *= (1.0 - PAN_DAMPING * time.delta_secs()).max(0.0);
+    velocity.position *= (1.0 - PAN_DAMPING * time.delta_secs()).max(0.0);
 }
 
 /// stolen from <https://bevy-cheatbook.github.io/cookbook/cursor2world.html>
