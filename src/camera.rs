@@ -7,6 +7,8 @@ use bevy::{
 };
 
 const ZOOM_SENSITIVITY: f32 = 0.1;
+const PAN_DAMPING: f32 = 5.0;
+const PAN_SENSITIVITY: f32 = 10.0;
 
 pub struct CameraPlugin;
 
@@ -22,8 +24,11 @@ impl Plugin for CameraPlugin {
 /// Resource that provides the current world coords of the camera
 pub struct CursorWorldCoords(pub Vec2);
 
+#[derive(Component, Default)]
+struct CameraVelocity(Vec3);
+
 fn setup_camera(mut commands: Commands) {
-    commands.spawn((Camera2d, Transform::default()));
+    commands.spawn((Camera2d, Transform::default(), CameraVelocity::default()));
 }
 
 fn zoom_camera(
@@ -32,30 +37,36 @@ fn zoom_camera(
 ) {
     match *camera_query.into_inner() {
         Projection::Orthographic(ref mut orthographic) => {
-            orthographic.scale *= mouse_wheel.delta.y;
+            orthographic.scale -= mouse_wheel.delta.y * ZOOM_SENSITIVITY * orthographic.scale;
         }
         _ => (),
     }
 }
 
 fn pan_camera(
-    camera_query: Single<(&mut Transform, &Projection), With<Camera>>,
+    camera_query: Single<(&mut Transform, &Projection, &mut CameraVelocity), With<Camera>>,
     mouse_movement: Res<AccumulatedMouseMotion>,
     mouse_button_events: Res<ButtonInput<MouseButton>>,
+    time: Res<Time>,
 ) {
+    let (mut transform, projection, mut velocity) = camera_query.into_inner();
+
+    let projection = match projection {
+        Projection::Orthographic(projection) => projection,
+        _ => {
+            error!("only orthographic projections are supported!");
+            return ();
+        }
+    };
+
     if mouse_button_events.pressed(MouseButton::Right) {
-        let (mut camera_transform, projection) = camera_query.into_inner();
-
-        let projection = match projection {
-            Projection::Orthographic(projection) => projection,
-            _ => {
-                error!("failed to find orthographic projection!");
-                return ();
-            }
-        };
-
-        camera_transform.translation += mouse_movement.delta.extend(0.0);
+        let delta = mouse_movement.delta.reflect(Vec2::X).extend(0.0) * projection.scale;
+        velocity.0 += delta * PAN_SENSITIVITY;
     }
+
+    transform.translation += velocity.0 * time.delta_secs();
+
+    velocity.0 *= (1.0 - PAN_DAMPING * time.delta_secs()).max(0.0);
 }
 
 /// stolen from <https://bevy-cheatbook.github.io/cookbook/cursor2world.html>
