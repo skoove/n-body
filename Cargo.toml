@@ -11,20 +11,9 @@ rand_pcg = "0.9"
 
 [dependencies.bevy]
 version = "0.16"
-default-features = false
+default-features = true
 features = [
   "wayland",
-  "bevy_asset",
-  "bevy_color",
-  "bevy_core_pipeline",
-  "bevy_gizmos",
-  "bevy_render",
-  "bevy_sprite",
-  "bevy_window",
-  "bevy_winit",
-  "multi_threaded",
-  "std",
-  "bevy_log"
 ]
 
 [profile.dev]
