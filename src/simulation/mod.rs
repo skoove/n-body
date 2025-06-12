@@ -14,7 +14,7 @@ impl Plugin for SimPlugin {
         app.add_systems(
             FixedUpdate,
             (
-                quadtree::quadtree_system,
+                // quadtree::quadtree_system,
                 motion::update_particle_positions,
                 gravity::calc_grav_accel,
                 collisions::calculate_collisions,
