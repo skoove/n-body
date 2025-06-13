@@ -131,7 +131,6 @@ fn give_particles_materials(
     >,
     mesh: Res<ParticleMesh>,
     material: Res<ParticleColorMaterial>,
-    mut meshes: ResMut<Assets<Mesh>>,
 ) {
     if query.is_empty() {
         return;

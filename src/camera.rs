@@ -1,7 +1,5 @@
-use core::panic;
-
 use bevy::{
-    input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll, MouseMotion, MouseWheel},
+    input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll},
     prelude::*,
     window::PrimaryWindow,
 };
