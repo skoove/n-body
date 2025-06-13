@@ -24,11 +24,12 @@ fn main() {
                     primary_window: Some(Window {
                         title: "n-body".into(),
                         mode: bevy::window::WindowMode::Windowed,
+                        present_mode: PresentMode::AutoNoVsync,
+
                         cursor_options: CursorOptions {
                             visible: true,
                             ..Default::default()
                         },
-                        present_mode: PresentMode::AutoNoVsync,
                         ..Default::default()
                     }),
                     ..Default::default()
