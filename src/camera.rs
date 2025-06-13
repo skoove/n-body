@@ -40,14 +40,11 @@ fn zoom_camera(
     time: Res<Time>,
 ) {
     let (mut projection, mut velocity) = camera_query.into_inner();
-    match *projection {
-        Projection::Orthographic(ref mut orthographic) => {
-            velocity.zoom += mouse_wheel.delta.y * ZOOM_SENSITIVITY;
-            velocity.zoom *= (1.0 - ZOOM_DAMPING * time.delta_secs()).max(0.0);
-            orthographic.scale -= orthographic.scale * velocity.zoom * time.delta_secs();
-            orthographic.scale = orthographic.scale.max(0.01)
-        }
-        _ => (),
+    if let Projection::Orthographic(ref mut orthographic) = *projection {
+        velocity.zoom += mouse_wheel.delta.y * ZOOM_SENSITIVITY;
+        velocity.zoom *= (1.0 - ZOOM_DAMPING * time.delta_secs()).max(0.0);
+        orthographic.scale -= orthographic.scale * velocity.zoom * time.delta_secs();
+        orthographic.scale = orthographic.scale.max(0.01)
     }
 }
 
