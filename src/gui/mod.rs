@@ -1,37 +1,19 @@
 use bevy::{input::mouse::MouseWheel, prelude::*};
 use bevy_egui::EguiPlugin;
-use debug::DebugPlugin;
-use performance_gui::PreformanceGuiPlugin;
-use simulation_controls::SimulationControlsGuiPlugin;
-use tools::ToolsGuiPlugin;
-use views::ViewsPlugin;
-
-mod debug;
-pub mod performance_gui;
-mod simulation_controls;
-mod tools;
-mod views;
 
 pub struct GuiPlugin;
 
 impl Plugin for GuiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((
-            EguiPlugin {
-                enable_multipass_for_primary_context: true,
-            },
-            PreformanceGuiPlugin,
-            SimulationControlsGuiPlugin,
-            ToolsGuiPlugin,
-            ViewsPlugin,
-            DebugPlugin,
-        ))
-        .add_systems(
-            PreUpdate,
-            absorb_egui_inputs
-                .after(bevy_egui::input::write_egui_input_system)
-                .before(bevy_egui::begin_pass_system),
-        );
+        app.add_plugins((EguiPlugin {
+            enable_multipass_for_primary_context: true,
+        },))
+            .add_systems(
+                PreUpdate,
+                absorb_egui_inputs
+                    .after(bevy_egui::input::write_egui_input_system)
+                    .before(bevy_egui::begin_pass_system),
+            );
     }
 }
 
