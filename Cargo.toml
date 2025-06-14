@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies]
 bevy_egui = "0.34"
-egui_dock = "0.16"
 egui_plot = "0.32"
 rand = "0.9"
 rand_pcg = "0.9"
