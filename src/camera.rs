@@ -60,7 +60,7 @@ fn pan_camera(
         Projection::Orthographic(projection) => projection,
         _ => {
             error!("only orthographic projections are supported!");
-            return ();
+            return;
         }
     };
 

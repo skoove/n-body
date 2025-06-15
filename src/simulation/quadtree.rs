@@ -180,6 +180,7 @@ impl QuadTree {
         }
     }
 
+    #[allow(dead_code)]
     fn visualize_from_root(&self) {
         self.visualize(0, 0, &mut HashSet::new());
     }
@@ -258,8 +259,6 @@ pub fn quadtree_system(
     for (entity, transform, mass) in &particles {
         qt.insert(*entity, *transform, *mass);
     }
-
-    // qt.visualize_from_root();
 
     let finish_time = Instant::now();
     let time_taken = finish_time - start_time;

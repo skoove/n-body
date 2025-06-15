@@ -1,3 +1,4 @@
+use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::log::{Level, LogPlugin};
 use bevy::prelude::*;
 use bevy::window::{CursorOptions, PresentMode};
@@ -18,7 +19,7 @@ const PHYSICS_UPDATE_HZ: f64 = 120.0;
 
 fn main() {
     App::new()
-        .add_plugins(
+        .add_plugins((
             DefaultPlugins
                 .set(WindowPlugin {
                     primary_window: Some(Window {
@@ -38,7 +39,8 @@ fn main() {
                     level: Level::INFO,
                     ..Default::default()
                 }),
-        )
+            FrameTimeDiagnosticsPlugin::new(100),
+        ))
         .add_plugins((
             CameraPlugin,
             GuiPlugin,

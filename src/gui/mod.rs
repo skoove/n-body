@@ -1,31 +1,18 @@
-use bevy::{input::mouse::MouseWheel, prelude::*};
-use bevy_egui::EguiPlugin;
-use debug::DebugPlugin;
-use performance_gui::PreformanceGuiPlugin;
-use simulation_controls::SimulationControlsGuiPlugin;
-use tools::ToolsGuiPlugin;
-use views::ViewsPlugin;
+use bevy::{diagnostic::DiagnosticsStore, input::mouse::MouseWheel, prelude::*};
+use bevy_egui::{egui, EguiContextPass, EguiPlugin};
 
-mod debug;
-pub mod performance_gui;
-mod simulation_controls;
+mod performance;
 mod tools;
-mod views;
 
 pub struct GuiPlugin;
 
 impl Plugin for GuiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((
-            EguiPlugin {
-                enable_multipass_for_primary_context: true,
-            },
-            PreformanceGuiPlugin,
-            SimulationControlsGuiPlugin,
-            ToolsGuiPlugin,
-            ViewsPlugin,
-            DebugPlugin,
-        ))
+        app.add_plugins(EguiPlugin {
+            enable_multipass_for_primary_context: true,
+        })
+        .init_resource::<tools::ToolState>()
+        .add_systems(EguiContextPass, egui_system)
         .add_systems(
             PreUpdate,
             absorb_egui_inputs
@@ -33,6 +20,37 @@ impl Plugin for GuiPlugin {
                 .before(bevy_egui::begin_pass_system),
         );
     }
+}
+
+fn egui_system(
+    mut contexts: bevy_egui::EguiContexts,
+    mut commands: Commands,
+    mut tool_state: ResMut<tools::ToolState>,
+    diagnostics: Res<DiagnosticsStore>,
+) {
+    let ctx = contexts.ctx_mut();
+
+    egui::TopBottomPanel::top("menu_bar")
+        .resizable(false)
+        .show(ctx, |ui| ui.label("n-body"));
+
+    // left side panel
+    egui::SidePanel::left("left_panel").show(ctx, |ui| {
+        egui_box(ui, "performance", true, |ui| {
+            performance::ui(ui, &diagnostics);
+        });
+
+        egui_box(ui, "tools", true, |ui| {
+            tool_state.ui(ui, &mut commands);
+        });
+    });
+}
+
+fn egui_box(ui: &mut egui::Ui, title: &str, open: bool, contents: impl FnOnce(&mut egui::Ui)) {
+    egui::CollapsingHeader::new(title)
+        .default_open(open)
+        .show(ui, |ui| contents(ui));
+    ui.separator();
 }
 
 // source:
