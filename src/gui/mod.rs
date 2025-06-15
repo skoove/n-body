@@ -2,25 +2,32 @@ use bevy::{diagnostic::DiagnosticsStore, input::mouse::MouseWheel, prelude::*};
 use bevy_egui::{egui, EguiContextPass, EguiPlugin};
 
 mod performance;
+mod tools;
 
 pub struct GuiPlugin;
 
 impl Plugin for GuiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((EguiPlugin {
+        app.add_plugins(EguiPlugin {
             enable_multipass_for_primary_context: true,
-        },))
-            .add_systems(EguiContextPass, egui_system)
-            .add_systems(
-                PreUpdate,
-                absorb_egui_inputs
-                    .after(bevy_egui::input::write_egui_input_system)
-                    .before(bevy_egui::begin_pass_system),
-            );
+        })
+        .init_resource::<tools::ToolState>()
+        .add_systems(EguiContextPass, egui_system)
+        .add_systems(
+            PreUpdate,
+            absorb_egui_inputs
+                .after(bevy_egui::input::write_egui_input_system)
+                .before(bevy_egui::begin_pass_system),
+        );
     }
 }
 
-fn egui_system(mut contexts: bevy_egui::EguiContexts, diagnostics: Res<DiagnosticsStore>) {
+fn egui_system(
+    mut contexts: bevy_egui::EguiContexts,
+    mut commands: Commands,
+    mut tool_state: ResMut<tools::ToolState>,
+    diagnostics: Res<DiagnosticsStore>,
+) {
     let ctx = contexts.ctx_mut();
 
     egui::TopBottomPanel::top("menu_bar")
@@ -28,13 +35,15 @@ fn egui_system(mut contexts: bevy_egui::EguiContexts, diagnostics: Res<Diagnosti
         .show(ctx, |ui| ui.label("n-body"));
 
     // left side panel
-    egui::SidePanel::left("left_panel")
-        .min_width(250.0)
-        .show(ctx, |ui| {
-            egui_box(ui, "performance", true, |ui| {
-                performance::ui(ui, &diagnostics);
-            });
+    egui::SidePanel::left("left_panel").show(ctx, |ui| {
+        egui_box(ui, "performance", true, |ui| {
+            performance::ui(ui, &diagnostics);
         });
+
+        egui_box(ui, "tools", true, |ui| {
+            tool_state.ui(ui, &mut commands);
+        });
+    });
 }
 
 fn egui_box(ui: &mut egui::Ui, title: &str, open: bool, contents: impl FnOnce(&mut egui::Ui)) {
