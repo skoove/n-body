@@ -1,5 +1,7 @@
-use bevy::{input::mouse::MouseWheel, prelude::*};
-use bevy_egui::EguiPlugin;
+use bevy::{diagnostic::DiagnosticsStore, input::mouse::MouseWheel, prelude::*};
+use bevy_egui::{egui, EguiContextPass, EguiPlugin};
+
+mod performance;
 
 pub struct GuiPlugin;
 
@@ -8,6 +10,7 @@ impl Plugin for GuiPlugin {
         app.add_plugins((EguiPlugin {
             enable_multipass_for_primary_context: true,
         },))
+            .add_systems(EguiContextPass, egui_system)
             .add_systems(
                 PreUpdate,
                 absorb_egui_inputs
@@ -15,6 +18,30 @@ impl Plugin for GuiPlugin {
                     .before(bevy_egui::begin_pass_system),
             );
     }
+}
+
+fn egui_system(mut contexts: bevy_egui::EguiContexts, diagnostics: Res<DiagnosticsStore>) {
+    let ctx = contexts.ctx_mut();
+
+    egui::TopBottomPanel::top("menu_bar")
+        .resizable(false)
+        .show(ctx, |ui| ui.label("n-body"));
+
+    // left side panel
+    egui::SidePanel::left("left_panel")
+        .min_width(250.0)
+        .show(ctx, |ui| {
+            egui_box(ui, "performance", true, |ui| {
+                performance::ui(ui, &diagnostics);
+            });
+        });
+}
+
+fn egui_box(ui: &mut egui::Ui, title: &str, open: bool, contents: impl FnOnce(&mut egui::Ui)) {
+    egui::CollapsingHeader::new(title)
+        .default_open(open)
+        .show(ui, |ui| contents(ui));
+    ui.separator();
 }
 
 // source:
