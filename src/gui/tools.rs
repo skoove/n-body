@@ -1,7 +1,9 @@
 use std::fmt::Display;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, transform::commands};
 use bevy_egui::egui;
+
+use crate::{camera::CursorWorldCoords, particle};
 
 #[derive(PartialEq, Debug, Copy, Clone)]
 enum Tool {
@@ -33,7 +35,16 @@ impl Tool {
 }
 
 impl ToolState {
-    pub fn ui(&mut self, ui: &mut egui::Ui, commands: &mut Commands) {
+    /// show the tool ui
+    pub fn ui(
+        &mut self,
+        ui: &mut egui::Ui,
+        commands: &mut Commands,
+        particles: Query<Entity, With<particle::Particle>>,
+    ) {
+        if ui.button("clear particles").clicked() {
+            particle::despawn_particles(commands, particles);
+        }
         egui::ComboBox::from_label("")
             .selected_text(format!("{}", self.selected_tool))
             .show_ui(ui, |ui| {
@@ -54,6 +65,9 @@ impl ToolState {
         selected_tool.ui(self, ui, commands);
     }
 
+    /// spawn particles using the config
+
+    // functions for reusable ui widgets
     fn mass_ui(&mut self, ui: &mut egui::Ui) {
         value_editor_row(
             ui,
@@ -117,4 +131,22 @@ fn value_editor_row(ui: &mut egui::Ui, value: &mut f32, speed: f32, label: &str,
     });
 
     ui.end_row();
+}
+
+fn tool_interactions(
+    mut tool_state: ResMut<ToolState>,
+    mut commands: Commands,
+    cursor_coords: Res<CursorWorldCoords>,
+    mouse_input: Res<ButtonInput<MouseButton>>,
+) {
+    let just_released = mouse_input.just_released(MouseButton::Left);
+    let just_pressed = mouse_input.just_pressed(MouseButton::Left);
+    let pressed = mouse_input.pressed(MouseButton::Left);
+
+    if just_pressed {
+        match tool_state.selected_tool {
+            Tool::SpawnParticle => todo!(),
+            Tool::SpawnRandomParticles => todo!(),
+        }
+    }
 }

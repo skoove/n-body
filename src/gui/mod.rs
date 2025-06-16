@@ -27,6 +27,7 @@ fn egui_system(
     mut commands: Commands,
     mut tool_state: ResMut<tools::ToolState>,
     diagnostics: Res<DiagnosticsStore>,
+    particles: Query<Entity, With<crate::particle::Particle>>,
 ) {
     let ctx = contexts.ctx_mut();
 
@@ -41,7 +42,7 @@ fn egui_system(
         });
 
         egui_box(ui, "tools", true, |ui| {
-            tool_state.ui(ui, &mut commands);
+            tool_state.ui(ui, &mut commands, particles);
         });
     });
 }
