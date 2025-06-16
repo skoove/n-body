@@ -3,19 +3,11 @@ use bevy::log::{Level, LogPlugin};
 use bevy::prelude::*;
 use bevy::window::{CursorOptions, PresentMode};
 
-use camera::CameraPlugin;
-use gui::GuiPlugin;
-use input::InputPlugin;
-use particle::ParticlePlugin;
-use simulation::SimPlugin;
-
-mod camera;
-mod gui;
-mod input;
-mod particle;
-mod simulation;
-
-const PHYSICS_UPDATE_HZ: f64 = 120.0;
+use n_body::camera::CameraPlugin;
+use n_body::gui::GuiPlugin;
+use n_body::input::InputPlugin;
+use n_body::particle::ParticlePlugin;
+use n_body::simulation::SimPlugin;
 
 fn main() {
     App::new()

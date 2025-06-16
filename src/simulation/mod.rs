@@ -1,11 +1,11 @@
-use crate::PHYSICS_UPDATE_HZ;
-
 use bevy::prelude::*;
 
 pub mod collisions;
 pub mod gravity;
 pub mod motion;
 pub mod quadtree;
+
+const PHYSICS_UPDATE_HZ: f64 = 120.0;
 
 pub struct SimPlugin;
 
