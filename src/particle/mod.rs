@@ -118,7 +118,6 @@ fn init_particle_mesh_and_material(
     commands.insert_resource(ParticleColorMaterial(material_handle));
 }
 
-#[allow(clippy::type_complexity)] // sorry clippy i kinda need it
 fn give_particles_materials(
     mut commands: Commands,
     mut query: Query<
