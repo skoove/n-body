@@ -14,6 +14,7 @@ enum Tool {
 #[derive(Resource)]
 pub struct ToolState {
     selected_tool: Tool,
+    position: Vec2,
     velocity: Vec2,
     mass: f32,
     radius: f32,
@@ -102,6 +103,7 @@ impl Default for ToolState {
     fn default() -> Self {
         ToolState {
             selected_tool: Tool::SpawnParticle,
+            position: Vec2::ZERO,
             velocity: Vec2::ZERO,
             mass: 1000.0,
             radius: 10.0,
@@ -133,20 +135,35 @@ fn value_editor_row(ui: &mut egui::Ui, value: &mut f32, speed: f32, label: &str,
     ui.end_row();
 }
 
-fn tool_interactions(
+/// Define actions for tools to do when clicking, dragging etc
+fn tool_interactions_system(
     mut tool_state: ResMut<ToolState>,
     mut commands: Commands,
+    mut gizmos: Gizmos,
     cursor_coords: Res<CursorWorldCoords>,
     mouse_input: Res<ButtonInput<MouseButton>>,
 ) {
+    let cursor_coords = cursor_coords.0;
+
     let just_released = mouse_input.just_released(MouseButton::Left);
     let just_pressed = mouse_input.just_pressed(MouseButton::Left);
     let pressed = mouse_input.pressed(MouseButton::Left);
 
+    // if lmb is not pressed
+    if !pressed {
+        match tool_state.selected_tool {
+            Tool::SpawnParticle => {
+                gizmos.circle_2d(cursor_coords, tool_state.radius, Color::WHITE);
+            }
+            Tool::SpawnRandomParticles => todo!(),
+        }
+    }
+
+    // if lmb was pressed this frame
     if just_pressed {
         match tool_state.selected_tool {
-            Tool::SpawnParticle => todo!(),
-            Tool::SpawnRandomParticles => todo!(),
+            Tool::SpawnParticle => tool_state.position = cursor_coords,
+            Tool::SpawnRandomParticles => (),
         }
     }
 }
