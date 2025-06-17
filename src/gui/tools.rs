@@ -4,6 +4,7 @@ use bevy::prelude::*;
 use bevy_egui::egui;
 
 use crate::camera::CursorWorldCoords;
+use crate::particle::spawners::SpawnRandomParticles;
 use crate::particle::{self, ParticleBundle};
 
 #[derive(PartialEq, Debug, Copy, Clone)]
@@ -19,19 +20,30 @@ pub struct ToolState {
     velocity: Vec2,
     mass: f32,
     radius: f32,
+    max_random_velocity: f32,
+    amount: u32,
+    inner_radius: f32,
+    outer_radius: f32,
 }
 
 impl Tool {
-    fn ui(&self, state: &mut ToolState, ui: &mut egui::Ui, commands: &mut Commands) {
+    fn ui(&self, state: &mut ToolState, ui: &mut egui::Ui) {
         egui::Grid::new("tool_grid")
             .num_columns(3)
             .striped(false)
             .show(ui, |ui| match self {
                 Tool::SpawnParticle => {
-                    state.radius_ui(ui);
                     state.mass_ui(ui);
+                    state.radius_ui(ui);
                 }
-                Tool::SpawnRandomParticles => todo!(),
+                Tool::SpawnRandomParticles => {
+                    state.mass_ui(ui);
+                    state.radius_ui(ui);
+                    state.amount_ui(ui);
+                    state.max_random_velocity_ui(ui);
+                    state.inner_radius_ui(ui);
+                    state.outer_radius_ui(ui);
+                }
             });
     }
 }
@@ -64,7 +76,7 @@ impl ToolState {
             });
 
         let selected_tool = self.selected_tool;
-        selected_tool.ui(self, ui, commands);
+        selected_tool.ui(self, ui);
     }
 
     /// spawn particle using the config
@@ -74,6 +86,18 @@ impl ToolState {
             .mass(self.mass)
             .position(self.position)
             .velocity(self.velocity)
+            .spawn(commands);
+    }
+
+    /// spawn random particles using the config in the state
+    fn spawn_random_particles(&self, commands: &mut Commands) {
+        SpawnRandomParticles::new()
+            .radius(self.radius)
+            .velocity(self.max_random_velocity)
+            .inner_radius(self.inner_radius)
+            .outer_radius(self.outer_radius)
+            .amount(self.amount)
+            .position(self.position)
             .spawn(commands);
     }
 
@@ -96,6 +120,52 @@ impl ToolState {
             "radius",
             "set the radius of the spawned particle",
         );
+        self.radius = self.radius.max(0.0);
+    }
+
+    fn inner_radius_ui(&mut self, ui: &mut egui::Ui) {
+        value_editor_row(
+            ui,
+            &mut self.inner_radius,
+            1.0,
+            "inner radius",
+            "inner radius of random particle spawning",
+        );
+        self.inner_radius = self.inner_radius.max(0.0);
+    }
+
+    fn outer_radius_ui(&mut self, ui: &mut egui::Ui) {
+        value_editor_row(
+            ui,
+            &mut self.outer_radius,
+            1.0,
+            "outer radius",
+            "outer radius of random particle spawning",
+        );
+        self.outer_radius = self.outer_radius.max(self.inner_radius)
+    }
+
+    fn max_random_velocity_ui(&mut self, ui: &mut egui::Ui) {
+        value_editor_row(
+            ui,
+            &mut self.max_random_velocity,
+            0.01,
+            "max velocity",
+            "maximum value of random velociteis",
+        );
+        self.max_random_velocity = self.max_random_velocity.max(0.0);
+    }
+
+    fn amount_ui(&mut self, ui: &mut egui::Ui) {
+        let mut amount_f32 = self.amount as f32;
+        value_editor_row(
+            ui,
+            &mut amount_f32,
+            5.0,
+            "amount",
+            "amount of particles to spawn",
+        );
+        self.amount = amount_f32 as u32;
     }
 }
 
@@ -116,6 +186,67 @@ impl Default for ToolState {
             velocity: Vec2::ZERO,
             mass: 1000.0,
             radius: 10.0,
+            max_random_velocity: 0.0,
+            amount: 100,
+            inner_radius: 0.0,
+            outer_radius: 100.0,
+        }
+    }
+}
+
+/// Define actions for tools to do when clicking, dragging etc
+pub fn tool_interactions_system(
+    mut tool_state: ResMut<ToolState>,
+    mut commands: Commands,
+    mut gizmos: Gizmos,
+    cursor_coords: Res<CursorWorldCoords>,
+    mouse_input: Res<ButtonInput<MouseButton>>,
+) {
+    let cursor_coords = cursor_coords.0;
+
+    let just_released = mouse_input.just_released(MouseButton::Left);
+    let just_pressed = mouse_input.just_pressed(MouseButton::Left);
+    let pressed = mouse_input.pressed(MouseButton::Left);
+
+    if !pressed {
+        match tool_state.selected_tool {
+            Tool::SpawnParticle => {
+                gizmos.circle_2d(cursor_coords, tool_state.radius, Color::WHITE);
+            }
+            Tool::SpawnRandomParticles => {
+                gizmos.circle_2d(cursor_coords, tool_state.inner_radius, Color::WHITE);
+                gizmos.circle_2d(cursor_coords, tool_state.outer_radius, Color::WHITE);
+            }
+        }
+    }
+
+    if just_pressed {
+        match tool_state.selected_tool {
+            Tool::SpawnParticle => tool_state.position = cursor_coords,
+            Tool::SpawnRandomParticles => (),
+        }
+    }
+
+    if pressed {
+        match tool_state.selected_tool {
+            Tool::SpawnParticle => {
+                let velocity = tool_state.position - cursor_coords;
+                let arrow_end = tool_state.position + velocity;
+                gizmos.circle_2d(tool_state.position, tool_state.radius, Color::WHITE);
+                gizmos.arrow_2d(tool_state.position, arrow_end, Color::WHITE);
+                tool_state.velocity = velocity * 0.05;
+            }
+            Tool::SpawnRandomParticles => (),
+        }
+    }
+
+    if just_released {
+        match tool_state.selected_tool {
+            Tool::SpawnParticle => tool_state.spawn_particle(&mut commands),
+            Tool::SpawnRandomParticles => {
+                tool_state.position = cursor_coords;
+                tool_state.spawn_random_particles(&mut commands)
+            }
         }
     }
 }
@@ -142,57 +273,4 @@ fn value_editor_row(ui: &mut egui::Ui, value: &mut f32, speed: f32, label: &str,
     });
 
     ui.end_row();
-}
-
-/// Define actions for tools to do when clicking, dragging etc
-pub fn tool_interactions_system(
-    mut tool_state: ResMut<ToolState>,
-    mut commands: Commands,
-    mut gizmos: Gizmos,
-    cursor_coords: Res<CursorWorldCoords>,
-    mouse_input: Res<ButtonInput<MouseButton>>,
-) {
-    let cursor_coords = cursor_coords.0;
-
-    let just_released = mouse_input.just_released(MouseButton::Left);
-    let just_pressed = mouse_input.just_pressed(MouseButton::Left);
-    let pressed = mouse_input.pressed(MouseButton::Left);
-
-    // if lmb is not pressed
-    if !pressed {
-        match tool_state.selected_tool {
-            Tool::SpawnParticle => {
-                gizmos.circle_2d(cursor_coords, tool_state.radius, Color::WHITE);
-            }
-            Tool::SpawnRandomParticles => todo!(),
-        }
-    }
-
-    // if lmb was pressed this frame
-    if just_pressed {
-        match tool_state.selected_tool {
-            Tool::SpawnParticle => tool_state.position = cursor_coords,
-            Tool::SpawnRandomParticles => (),
-        }
-    }
-
-    if pressed {
-        match tool_state.selected_tool {
-            Tool::SpawnParticle => {
-                let velocity = tool_state.position - cursor_coords;
-                let arrow_end = tool_state.position + velocity;
-                gizmos.circle_2d(tool_state.position, tool_state.radius, Color::WHITE);
-                gizmos.arrow_2d(tool_state.position, arrow_end, Color::WHITE);
-                tool_state.velocity = velocity * 0.05;
-            }
-            Tool::SpawnRandomParticles => todo!(),
-        }
-    }
-
-    if just_released {
-        match tool_state.selected_tool {
-            Tool::SpawnParticle => tool_state.spawn_particle(&mut commands),
-            Tool::SpawnRandomParticles => todo!(),
-        }
-    }
 }
