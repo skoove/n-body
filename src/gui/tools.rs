@@ -3,7 +3,10 @@ use std::fmt::Display;
 use bevy::{prelude::*, transform::commands};
 use bevy_egui::egui;
 
-use crate::{camera::CursorWorldCoords, particle};
+use crate::{
+    camera::CursorWorldCoords,
+    particle::{self, Particle, ParticleBundle},
+};
 
 #[derive(PartialEq, Debug, Copy, Clone)]
 enum Tool {
@@ -136,7 +139,7 @@ fn value_editor_row(ui: &mut egui::Ui, value: &mut f32, speed: f32, label: &str,
 }
 
 /// Define actions for tools to do when clicking, dragging etc
-fn tool_interactions_system(
+pub fn tool_interactions_system(
     mut tool_state: ResMut<ToolState>,
     mut commands: Commands,
     mut gizmos: Gizmos,
@@ -164,6 +167,33 @@ fn tool_interactions_system(
         match tool_state.selected_tool {
             Tool::SpawnParticle => tool_state.position = cursor_coords,
             Tool::SpawnRandomParticles => (),
+        }
+    }
+
+    if pressed {
+        match tool_state.selected_tool {
+            Tool::SpawnParticle => {
+                let velocity = tool_state.position - cursor_coords;
+                let arrow_end = tool_state.position + velocity;
+                gizmos.circle_2d(tool_state.position, tool_state.radius, Color::WHITE);
+                gizmos.arrow_2d(tool_state.position, arrow_end, Color::WHITE);
+                tool_state.velocity = velocity * 0.05;
+            }
+            Tool::SpawnRandomParticles => todo!(),
+        }
+    }
+
+    if just_released {
+        match tool_state.selected_tool {
+            Tool::SpawnParticle => {
+                ParticleBundle::new()
+                    .radius(tool_state.radius)
+                    .mass(tool_state.mass)
+                    .position(tool_state.position)
+                    .velocity(tool_state.velocity)
+                    .spawn(&mut commands);
+            }
+            Tool::SpawnRandomParticles => todo!(),
         }
     }
 }

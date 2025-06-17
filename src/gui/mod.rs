@@ -13,6 +13,7 @@ impl Plugin for GuiPlugin {
         })
         .init_resource::<tools::ToolState>()
         .add_systems(EguiContextPass, egui_system)
+        .add_systems(Update, tools::tool_interactions_system)
         .add_systems(
             PreUpdate,
             absorb_egui_inputs
