@@ -2,23 +2,28 @@ use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_egui::egui;
 
-pub fn ui(ui: &mut egui::Ui, diagnostics: &DiagnosticsStore) {
+use crate::particle::ParticleCount;
+
+pub fn ui(ui: &mut egui::Ui, diagnostics: &DiagnosticsStore, particle_count: &ParticleCount) {
     egui::Grid::new("perf_stats_grid")
         .num_columns(2)
         .striped(true)
         .show(ui, |ui| {
             ui.label("fps");
-            ui.label(format!("{}", get_fps(diagnostics)));
+            ui.label(get_fps(diagnostics));
             ui.end_row();
 
             ui.label("mspf")
                 .on_hover_text_at_pointer("miliseconds per frame");
-            ui.label(format!("{}", get_frame_time(diagnostics)));
+            ui.label(get_frame_time(diagnostics));
             ui.end_row();
 
             ui.label("frame");
-            ui.label(format!("{}", get_frame_count(diagnostics)));
+            ui.label(get_frame_count(diagnostics));
             ui.end_row();
+
+            ui.label("particles");
+            ui.label(format!("{}", particle_count.0));
         });
 }
 
