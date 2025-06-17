@@ -3,9 +3,23 @@ use bevy::prelude::*;
 use bevy_egui::egui;
 
 pub fn ui(ui: &mut egui::Ui, diagnostics: &DiagnosticsStore) {
-    ui.label(format!("fps: {}", get_fps(diagnostics)));
-    ui.label(format!("mspf: {} ms", get_frame_time(diagnostics)));
-    ui.label(format!("frame: {}", get_frame_count(diagnostics)));
+    egui::Grid::new("perf_stats_grid")
+        .num_columns(2)
+        .striped(true)
+        .show(ui, |ui| {
+            ui.label("fps");
+            ui.label(format!("{}", get_fps(diagnostics)));
+            ui.end_row();
+
+            ui.label("mspf")
+                .on_hover_text_at_pointer("miliseconds per frame");
+            ui.label(format!("{}", get_frame_time(diagnostics)));
+            ui.end_row();
+
+            ui.label("frame");
+            ui.label(format!("{}", get_frame_count(diagnostics)));
+            ui.end_row();
+        });
 }
 
 fn get_fps(diagnostics: &DiagnosticsStore) -> String {
