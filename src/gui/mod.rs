@@ -1,6 +1,8 @@
 use bevy::{diagnostic::DiagnosticsStore, input::mouse::MouseWheel, prelude::*};
 use bevy_egui::{egui, EguiContextPass, EguiPlugin};
 
+use crate::particle::ParticleCount;
+
 mod performance;
 mod tools;
 
@@ -29,6 +31,7 @@ fn egui_system(
     mut tool_state: ResMut<tools::ToolState>,
     diagnostics: Res<DiagnosticsStore>,
     particles: Query<Entity, With<crate::particle::Particle>>,
+    particle_count: Res<ParticleCount>,
 ) {
     let ctx = contexts.ctx_mut();
 
@@ -39,7 +42,7 @@ fn egui_system(
     // left side panel
     egui::SidePanel::left("left_panel").show(ctx, |ui| {
         egui_box(ui, "performance", true, |ui| {
-            performance::ui(ui, &diagnostics);
+            performance::ui(ui, &diagnostics, &particle_count);
         });
 
         egui_box(ui, "tools", true, |ui| {
