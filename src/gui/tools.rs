@@ -1,12 +1,10 @@
 use std::fmt::Display;
 
-use bevy::{prelude::*, transform::commands};
+use bevy::prelude::*;
 use bevy_egui::egui;
 
-use crate::{
-    camera::CursorWorldCoords,
-    particle::{self, Particle, ParticleBundle},
-};
+use crate::camera::CursorWorldCoords;
+use crate::particle::{self, ParticleBundle};
 
 #[derive(PartialEq, Debug, Copy, Clone)]
 enum Tool {
@@ -69,7 +67,15 @@ impl ToolState {
         selected_tool.ui(self, ui, commands);
     }
 
-    /// spawn particles using the config
+    /// spawn particle using the config
+    fn spawn_particle(&self, commands: &mut Commands) {
+        ParticleBundle::new()
+            .radius(self.radius)
+            .mass(self.mass)
+            .position(self.position)
+            .velocity(self.velocity)
+            .spawn(commands);
+    }
 
     // functions for reusable ui widgets
     fn mass_ui(&mut self, ui: &mut egui::Ui) {
@@ -185,14 +191,7 @@ pub fn tool_interactions_system(
 
     if just_released {
         match tool_state.selected_tool {
-            Tool::SpawnParticle => {
-                ParticleBundle::new()
-                    .radius(tool_state.radius)
-                    .mass(tool_state.mass)
-                    .position(tool_state.position)
-                    .velocity(tool_state.velocity)
-                    .spawn(&mut commands);
-            }
+            Tool::SpawnParticle => tool_state.spawn_particle(&mut commands),
             Tool::SpawnRandomParticles => todo!(),
         }
     }
