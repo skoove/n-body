@@ -4,6 +4,7 @@ use bevy_egui::{egui, EguiContextPass, EguiPlugin};
 use crate::particle::ParticleCount;
 
 mod performance;
+mod settings;
 mod tools;
 
 pub struct GuiPlugin;
@@ -27,10 +28,9 @@ impl Plugin for GuiPlugin {
 
 fn egui_system(
     mut contexts: bevy_egui::EguiContexts,
-    mut commands: Commands,
     mut tool_state: ResMut<tools::ToolState>,
+    mut sim_settings: ResMut<crate::simulation::SimSettings>,
     diagnostics: Res<DiagnosticsStore>,
-    particles: Query<Entity, With<crate::particle::Particle>>,
     particle_count: Res<ParticleCount>,
 ) {
     let ctx = contexts.ctx_mut();
@@ -42,11 +42,15 @@ fn egui_system(
     // left side panel
     egui::SidePanel::left("left_panel").show(ctx, |ui| {
         egui_box(ui, "performance", true, |ui| {
-            performance::ui(ui, &diagnostics, &particle_count);
+            performance::ui(ui, &diagnostics, &particle_count)
+        });
+
+        egui_box(ui, "simulation settings", true, |ui| {
+            sim_settings.ui(ui);
         });
 
         egui_box(ui, "tools", true, |ui| {
-            tool_state.ui(ui, &mut commands, particles);
+            tool_state.ui(ui);
         });
     });
 }
@@ -56,6 +60,30 @@ fn egui_box(ui: &mut egui::Ui, title: &str, open: bool, contents: impl FnOnce(&m
         .default_open(open)
         .show(ui, |ui| contents(ui));
     ui.separator();
+}
+
+fn value_editor_row(ui: &mut egui::Ui, value: &mut f32, speed: f32, label: &str, hover_text: &str) {
+    ui.label(label);
+
+    ui.add(egui::DragValue::new(value).speed(speed))
+        .on_hover_text_at_pointer(hover_text);
+
+    ui.horizontal(|ui| {
+        if ui.button("x0.01").clicked() {
+            *value *= 0.01;
+        }
+        if ui.button("x0.1").clicked() {
+            *value *= 0.1;
+        }
+        if ui.button("x10").clicked() {
+            *value *= 10.0;
+        }
+        if ui.button("x100").clicked() {
+            *value *= 100.0;
+        }
+    });
+
+    ui.end_row();
 }
 
 // source:

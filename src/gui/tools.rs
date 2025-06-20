@@ -1,11 +1,12 @@
-use std::fmt::Display;
-
 use bevy::prelude::*;
 use bevy_egui::egui;
+use std::fmt::Display;
 
 use crate::camera::CursorWorldCoords;
 use crate::particle::spawners::SpawnRandomParticles;
-use crate::particle::{self, ParticleBundle};
+use crate::particle::ParticleBundle;
+
+use super::value_editor_row;
 
 #[derive(PartialEq, Debug, Copy, Clone)]
 enum Tool {
@@ -30,7 +31,7 @@ impl Tool {
     fn ui(&self, state: &mut ToolState, ui: &mut egui::Ui) {
         egui::Grid::new("tool_grid")
             .num_columns(3)
-            .striped(false)
+            .striped(true)
             .show(ui, |ui| match self {
                 Tool::SpawnParticle => {
                     state.mass_ui(ui);
@@ -50,15 +51,7 @@ impl Tool {
 
 impl ToolState {
     /// show the tool ui
-    pub fn ui(
-        &mut self,
-        ui: &mut egui::Ui,
-        commands: &mut Commands,
-        particles: Query<Entity, With<particle::Particle>>,
-    ) {
-        if ui.button("clear particles").clicked() {
-            particle::despawn_particles(commands, particles);
-        }
+    pub fn ui(&mut self, ui: &mut egui::Ui) {
         egui::ComboBox::from_label("")
             .selected_text(format!("{}", self.selected_tool))
             .show_ui(ui, |ui| {
@@ -259,28 +252,4 @@ pub fn tool_interactions_system(
             }
         }
     }
-}
-
-fn value_editor_row(ui: &mut egui::Ui, value: &mut f32, speed: f32, label: &str, hover_text: &str) {
-    ui.label(label);
-
-    ui.add(egui::DragValue::new(value).speed(speed))
-        .on_hover_text_at_pointer(hover_text);
-
-    ui.horizontal(|ui| {
-        if ui.button("x0.01").clicked() {
-            *value *= 0.01;
-        }
-        if ui.button("x0.1").clicked() {
-            *value *= 0.1;
-        }
-        if ui.button("x10").clicked() {
-            *value *= 10.0;
-        }
-        if ui.button("x100").clicked() {
-            *value *= 100.0;
-        }
-    });
-
-    ui.end_row();
 }

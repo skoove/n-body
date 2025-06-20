@@ -10,7 +10,7 @@ pub fn calculate_collisions(
     if !sim_settings.enable_collisions {
         return;
     }
-    for _ in 0..sim_settings.collision_substeps {
+    for _ in 0..sim_settings.collision_steps {
         let mut iter = particles.iter_combinations_mut();
         while let Some([(mut pos1, Radius(radius1)), (mut pos2, Radius(radius2))]) =
             iter.fetch_next()
