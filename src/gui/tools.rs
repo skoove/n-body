@@ -1,371 +1,255 @@
 use bevy::prelude::*;
-use bevy_egui::{egui, EguiContextPass, EguiContexts};
+use bevy_egui::egui;
+use std::fmt::Display;
 
-use crate::camera::{self};
-use crate::particle::{spawners, ParticleBundle};
+use crate::camera::CursorWorldCoords;
+use crate::particle::spawners::SpawnRandomParticles;
+use crate::particle::ParticleBundle;
 
-pub struct ToolsGuiPlugin;
+use super::value_editor_row;
 
-impl Plugin for ToolsGuiPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(EguiContextPass, (tools_gui, tool_behaviours))
-            .init_resource::<Tool>()
-            .init_resource::<ToolSettings>();
-    }
-}
-
-#[derive(Resource, PartialEq)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 enum Tool {
     SpawnParticle,
-    SpawnRandom,
-    SpawnHose,
-    Attract,
-    Repel,
+    SpawnRandomParticles,
 }
 
 #[derive(Resource)]
-struct ToolSettings {
+pub struct ToolState {
+    selected_tool: Tool,
+    position: Vec2,
+    velocity: Vec2,
     mass: f32,
     radius: f32,
-    velocity: Vec2,
-    position: Vec2,
-
+    max_random_velocity: f32,
+    amount: u32,
     inner_radius: f32,
     outer_radius: f32,
-    amount_to_spawn: f32,
-    scalar_velocity: f32,
-    value_variation: bool,
-
-    rainbow: bool,
-    direction: Vec2,
-    spawn_rate: f32,
 }
 
-impl Default for ToolSettings {
-    fn default() -> Self {
-        Self {
-            mass: 10000.0,
-            radius: 10.0,
-            velocity: Vec2::ZERO,
-            position: Vec2::ZERO,
-
-            inner_radius: 0.0,
-            outer_radius: 100.0,
-            amount_to_spawn: 100.0,
-            scalar_velocity: 0.0,
-            value_variation: false,
-
-            rainbow: false,
-            direction: Vec2::X,
-            spawn_rate: 1.0,
-        }
+impl Tool {
+    fn ui(&self, state: &mut ToolState, ui: &mut egui::Ui) {
+        egui::Grid::new("tool_grid")
+            .num_columns(3)
+            .striped(true)
+            .show(ui, |ui| match self {
+                Tool::SpawnParticle => {
+                    state.mass_ui(ui);
+                    state.radius_ui(ui);
+                }
+                Tool::SpawnRandomParticles => {
+                    state.mass_ui(ui);
+                    state.radius_ui(ui);
+                    state.amount_ui(ui);
+                    state.max_random_velocity_ui(ui);
+                    state.inner_radius_ui(ui);
+                    state.outer_radius_ui(ui);
+                }
+            });
     }
 }
 
-impl Default for Tool {
-    fn default() -> Self {
-        Self::SpawnParticle
+impl ToolState {
+    /// show the tool ui
+    pub fn ui(&mut self, ui: &mut egui::Ui) {
+        egui::ComboBox::from_label("")
+            .selected_text(format!("{}", self.selected_tool))
+            .show_ui(ui, |ui| {
+                ui.selectable_value(
+                    &mut self.selected_tool,
+                    Tool::SpawnParticle,
+                    format!("{}", Tool::SpawnParticle),
+                );
+
+                ui.selectable_value(
+                    &mut self.selected_tool,
+                    Tool::SpawnRandomParticles,
+                    format!("{}", Tool::SpawnRandomParticles),
+                )
+            });
+
+        let selected_tool = self.selected_tool;
+        selected_tool.ui(self, ui);
+    }
+
+    /// spawn particle using the config
+    fn spawn_particle(&self, commands: &mut Commands) {
+        ParticleBundle::new()
+            .radius(self.radius)
+            .mass(self.mass)
+            .position(self.position)
+            .velocity(self.velocity)
+            .spawn(commands);
+    }
+
+    /// spawn random particles using the config in the state
+    fn spawn_random_particles(&self, commands: &mut Commands) {
+        SpawnRandomParticles::new()
+            .position(self.position)
+            .radius(self.radius)
+            .mass(self.mass)
+            .velocity(self.max_random_velocity)
+            .inner_radius(self.inner_radius)
+            .outer_radius(self.outer_radius)
+            .amount(self.amount)
+            .spawn(commands);
+    }
+
+    /// gizmo preview for random particles tool
+    fn preview_random_particles(&self, gizmos: &mut Gizmos, cursor_coords: Vec2) {
+        gizmos.circle_2d(cursor_coords, self.inner_radius, Color::WHITE);
+        gizmos.circle_2d(cursor_coords, self.outer_radius, Color::WHITE);
+    }
+
+    // functions for reusable ui widgets
+    fn mass_ui(&mut self, ui: &mut egui::Ui) {
+        value_editor_row(
+            ui,
+            &mut self.mass,
+            1.0,
+            "mass",
+            "set the mass of the spawned particle",
+        );
+    }
+
+    fn radius_ui(&mut self, ui: &mut egui::Ui) {
+        value_editor_row(
+            ui,
+            &mut self.radius,
+            1.0,
+            "radius",
+            "set the radius of the spawned particle",
+        );
+        self.radius = self.radius.max(0.0);
+    }
+
+    fn inner_radius_ui(&mut self, ui: &mut egui::Ui) {
+        value_editor_row(
+            ui,
+            &mut self.inner_radius,
+            1.0,
+            "inner radius",
+            "inner radius of random particle spawning",
+        );
+        self.inner_radius = self.inner_radius.max(0.0);
+    }
+
+    fn outer_radius_ui(&mut self, ui: &mut egui::Ui) {
+        value_editor_row(
+            ui,
+            &mut self.outer_radius,
+            1.0,
+            "outer radius",
+            "outer radius of random particle spawning",
+        );
+        self.outer_radius = self.outer_radius.max(self.inner_radius)
+    }
+
+    fn max_random_velocity_ui(&mut self, ui: &mut egui::Ui) {
+        value_editor_row(
+            ui,
+            &mut self.max_random_velocity,
+            0.01,
+            "max velocity",
+            "maximum value of random velociteis",
+        );
+        self.max_random_velocity = self.max_random_velocity.max(0.0);
+    }
+
+    fn amount_ui(&mut self, ui: &mut egui::Ui) {
+        let mut amount_f32 = self.amount as f32;
+        value_editor_row(
+            ui,
+            &mut amount_f32,
+            5.0,
+            "amount",
+            "amount of particles to spawn",
+        );
+        self.amount = amount_f32 as u32;
     }
 }
 
-impl std::fmt::Display for Tool {
+impl Display for Tool {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Tool::SpawnParticle => write!(f, "spawn particle"),
-            Tool::SpawnRandom => write!(f, "spawn random particles"),
-            Tool::SpawnHose => write!(f, "spawn particle hose"),
-            Tool::Attract => write!(f, "attract particles"),
-            Tool::Repel => write!(f, "repel particles"),
+            Tool::SpawnRandomParticles => write!(f, "spawn random particle"),
         }
     }
 }
 
-fn tools_gui(mut contexts: EguiContexts, mut tool: ResMut<Tool>, settings: ResMut<ToolSettings>) {
-    egui::Window::new("tools").show(contexts.ctx_mut(), |ui| {
-        egui::ComboBox::from_label("select a tool")
-            .selected_text(format!("{}", *tool))
-            .show_ui(ui, |ui| {
-                ui.selectable_value(
-                    &mut *tool,
-                    Tool::SpawnParticle,
-                    format!("{}", Tool::SpawnParticle),
-                )
-                .on_hover_text("spawn a single particle");
-
-                ui.selectable_value(
-                    &mut *tool,
-                    Tool::SpawnRandom,
-                    format!("{}", Tool::SpawnRandom),
-                )
-                .on_hover_text("spawn random particles");
-
-                ui.selectable_value(&mut *tool, Tool::SpawnHose, format!("{}", Tool::SpawnHose))
-                    .on_hover_text("create a hose that makes a constant stream of particles");
-
-                ui.selectable_value(&mut *tool, Tool::Attract, format!("{}", Tool::Attract))
-                    .on_hover_text("attract particles");
-
-                ui.selectable_value(&mut *tool, Tool::Repel, format!("{}", Tool::Repel))
-                    .on_hover_text("repel particles");
-            });
-        match *tool {
-            Tool::SpawnParticle => spawn_particle_gui(ui, settings),
-            Tool::SpawnRandom => spawn_random_gui(ui, settings),
-            Tool::SpawnHose => spawn_hose_gui(ui, settings),
-            Tool::Attract => todo!(),
-            Tool::Repel => todo!(),
+impl Default for ToolState {
+    fn default() -> Self {
+        ToolState {
+            selected_tool: Tool::SpawnParticle,
+            position: Vec2::ZERO,
+            velocity: Vec2::ZERO,
+            mass: 100.0,
+            radius: 1.0,
+            max_random_velocity: 0.0,
+            amount: 100,
+            inner_radius: 0.0,
+            outer_radius: 100.0,
         }
-    });
+    }
 }
 
-fn drag_value_with_multiply_buttons(
-    ui: &mut egui::Ui,
-    value: &mut f32,
-    speed: f32,
-    label: &str,
-    hover_text: &str,
-) {
-    ui.horizontal(|ui| {
-        ui.label(label);
-        ui.add(egui::DragValue::new(value).speed(speed))
-            .on_hover_text_at_pointer(hover_text);
-        ui.separator();
-        if ui.button("x0.01").clicked() {
-            *value *= 0.01;
-        }
-        if ui.button("x0.1").clicked() {
-            *value *= 0.1;
-        }
-        if ui.button("x10").clicked() {
-            *value *= 10.0;
-        }
-        if ui.button("x100").clicked() {
-            *value *= 100.0;
-        }
-    });
-}
-
-fn spawn_particle_gui(ui: &mut egui::Ui, mut settings: ResMut<ToolSettings>) {
-    drag_value_with_multiply_buttons(
-        ui,
-        &mut settings.mass,
-        50.0,
-        "mass:",
-        "mass of the spawned particle",
-    );
-    drag_value_with_multiply_buttons(
-        ui,
-        &mut settings.radius,
-        0.1,
-        "radius:",
-        "radius of the spawned particle",
-    );
-}
-
-fn spawn_random_gui(ui: &mut egui::Ui, mut settings: ResMut<ToolSettings>) {
-    // make sure amount to spawn can be properly converted to u32
-    settings.amount_to_spawn = settings.amount_to_spawn.abs().round();
-    // make sure that the inner and outer radius are not greater or smaller than eachother, could panic otherwise
-    settings.inner_radius = settings.inner_radius.min(settings.outer_radius - 1.0).abs();
-    settings.outer_radius = settings.outer_radius.max(settings.inner_radius + 1.0).abs();
-    drag_value_with_multiply_buttons(
-        ui,
-        &mut settings.amount_to_spawn,
-        1.0,
-        "amount:",
-        "amount of particles to spawn",
-    );
-    drag_value_with_multiply_buttons(
-        ui,
-        &mut settings.mass,
-        50.0,
-        "mass:",
-        "mass of the spawned particles",
-    );
-    drag_value_with_multiply_buttons(
-        ui,
-        &mut settings.scalar_velocity,
-        0.01,
-        "velocity range:",
-        "velocity of particls will be between 0 and this value",
-    );
-    drag_value_with_multiply_buttons(
-        ui,
-        &mut settings.radius,
-        0.1,
-        "radius:",
-        "radius of the spawned particles",
-    );
-    drag_value_with_multiply_buttons(
-        ui,
-        &mut settings.inner_radius,
-        1.0,
-        "inner radius:",
-        "inner radius of the particle cloud, having this above zero makes a doughnut shape",
-    );
-    drag_value_with_multiply_buttons(
-        ui,
-        &mut settings.outer_radius,
-        1.0,
-        "outer radius:",
-        "outer radius of the particle cloud",
-    );
-    ui.checkbox(&mut settings.value_variation, "value variation").on_hover_text_at_pointer("make the values of spawned particles different, meaning they will be lighter and darker than eachother");
-}
-
-fn spawn_hose_gui(ui: &mut egui::Ui, mut settings: ResMut<ToolSettings>) {
-    // make sure amount to spawn can be properly converted to u32
-    settings.amount_to_spawn = settings.amount_to_spawn.abs().round();
-    drag_value_with_multiply_buttons(
-        ui,
-        &mut settings.amount_to_spawn,
-        1.0,
-        "amount to spawn",
-        "amount for the hose to spawn until it destroys itself",
-    );
-    drag_value_with_multiply_buttons(
-        ui,
-        &mut settings.spawn_rate,
-        0.1,
-        "spawn rate:",
-        "amount of particles to spawn per second",
-    );
-    drag_value_with_multiply_buttons(
-        ui,
-        &mut settings.radius,
-        0.1,
-        "radius:",
-        "radius of the spawned particles",
-    );
-    drag_value_with_multiply_buttons(
-        ui,
-        &mut settings.mass,
-        50.0,
-        "mass:",
-        "mass of the spawned particles",
-    );
-    drag_value_with_multiply_buttons(
-        ui,
-        &mut settings.scalar_velocity,
-        0.01,
-        "velocity",
-        "velocity of particles coming out of the hose",
-    );
-    ui.checkbox(&mut settings.rainbow, "rainbow")
-        .on_hover_text_at_pointer("when checked the particles will spawn in a rainbow :D");
-}
-
-/// things done when the left mouse button is released
-fn tool_behaviours(
+/// Define actions for tools to do when clicking, dragging etc
+pub fn tool_interactions_system(
+    mut tool_state: ResMut<ToolState>,
     mut commands: Commands,
-    selected_tool: Res<Tool>,
-    mut settings: ResMut<ToolSettings>,
-    inputs: Res<ButtonInput<MouseButton>>,
-    cursor_coords: Res<camera::CursorWorldCoords>,
     mut gizmos: Gizmos,
+    cursor_coords: Res<CursorWorldCoords>,
+    mouse_input: Res<ButtonInput<MouseButton>>,
 ) {
-    // for when the button is released, useually exectutes the function of the tool
-    if inputs.just_released(MouseButton::Left) {
-        match *selected_tool {
-            Tool::SpawnParticle => {
-                settings.velocity = (settings.position - cursor_coords.0) / 25.0;
-                ParticleBundle::new()
-                    .position(settings.position)
-                    .velocity(settings.velocity)
-                    .radius(settings.radius)
-                    .mass(settings.mass)
-                    .spawn(&mut commands)
-            }
-            Tool::SpawnRandom => spawners::SpawnRandomParticles::new()
-                .position(cursor_coords.0)
-                .velocity(settings.scalar_velocity)
-                .outer_radius(settings.outer_radius)
-                .inner_radius(settings.inner_radius)
-                .amount(settings.amount_to_spawn as u32)
-                .mass(settings.mass)
-                .value_variation(settings.value_variation)
-                .radius(settings.radius)
-                .spawn(&mut commands),
-            Tool::SpawnHose => spawners::ParticleHose::new()
-                .amount(settings.amount_to_spawn as u32)
-                .position(settings.position)
-                .velocity(settings.scalar_velocity)
-                .radius(settings.radius)
-                .mass(settings.mass)
-                .rainbow(settings.rainbow)
-                .direction(settings.direction)
-                .per_second(settings.spawn_rate)
-                .spawn(&mut commands),
-            Tool::Attract => todo!(),
-            Tool::Repel => todo!(),
-        };
-    };
+    let cursor_coords = cursor_coords.0;
 
-    // for when the button has just been pressed, probably unused on most things
-    if inputs.just_pressed(MouseButton::Left) {
-        match *selected_tool {
-            Tool::SpawnParticle => {
-                settings.position = cursor_coords.0;
-            }
-            Tool::SpawnRandom => (),
-            Tool::SpawnHose => settings.position = cursor_coords.0,
-            Tool::Attract => todo!(),
-            Tool::Repel => todo!(),
-        };
-    };
+    let just_released = mouse_input.just_released(MouseButton::Left);
+    let just_pressed = mouse_input.just_pressed(MouseButton::Left);
+    let pressed = mouse_input.pressed(MouseButton::Left);
 
-    // for when the button is held down, probably unused on most things
-    if inputs.pressed(MouseButton::Left) {
-        match *selected_tool {
+    if !pressed {
+        match tool_state.selected_tool {
             Tool::SpawnParticle => {
-                let direction = settings.position - cursor_coords.0;
-                let arrow_end = settings.position + direction;
-                gizmos.arrow_2d(settings.position, arrow_end, Color::WHITE);
-                gizmos.circle_2d(
-                    Isometry2d::new(settings.position, Rot2::IDENTITY),
-                    settings.radius,
-                    Color::WHITE,
-                );
+                gizmos.circle_2d(cursor_coords, tool_state.radius, Color::WHITE);
             }
-            Tool::SpawnRandom => (),
-            Tool::SpawnHose => {
-                let direction = (settings.position - cursor_coords.0).normalize() * 10.0;
-                let arrow_end = settings.position + direction;
-                gizmos.arrow_2d(settings.position, arrow_end, Color::WHITE);
-                settings.direction = direction;
+            Tool::SpawnRandomParticles => {
+                tool_state.preview_random_particles(&mut gizmos, cursor_coords)
             }
-            Tool::Attract => todo!(),
-            Tool::Repel => todo!(),
-        };
-    };
+        }
+    }
 
-    // for when the button is not pressed but the tool is selected, for stuff like previews
-    if !inputs.pressed(MouseButton::Left) {
-        match *selected_tool {
+    if just_pressed {
+        match tool_state.selected_tool {
+            Tool::SpawnParticle => tool_state.position = cursor_coords,
+            Tool::SpawnRandomParticles => {
+                tool_state.position = cursor_coords;
+                tool_state.spawn_random_particles(&mut commands)
+            }
+        }
+    }
+
+    if pressed {
+        match tool_state.selected_tool {
             Tool::SpawnParticle => {
-                gizmos
-                    .circle_2d(
-                        Isometry2d::new(cursor_coords.0, Rot2::IDENTITY),
-                        settings.radius,
-                        Color::WHITE,
-                    )
-                    .resolution(32);
+                let velocity = tool_state.position - cursor_coords;
+                let arrow_end = tool_state.position + velocity;
+                gizmos.circle_2d(tool_state.position, tool_state.radius, Color::WHITE);
+                gizmos.arrow_2d(tool_state.position, arrow_end, Color::WHITE);
+                tool_state.velocity = velocity * 0.05;
             }
-            Tool::SpawnRandom => {
-                gizmos.circle_2d(
-                    Isometry2d::new(cursor_coords.0, Rot2::IDENTITY),
-                    settings.outer_radius,
-                    Color::WHITE,
-                );
-                gizmos.circle_2d(
-                    Isometry2d::new(cursor_coords.0, Rot2::IDENTITY),
-                    settings.inner_radius,
-                    Color::WHITE,
-                );
+            Tool::SpawnRandomParticles => {
+                tool_state.preview_random_particles(&mut gizmos, cursor_coords);
             }
-            Tool::SpawnHose => (),
-            Tool::Attract => todo!(),
-            Tool::Repel => todo!(),
-        };
-    };
+        }
+    }
+
+    if just_released {
+        match tool_state.selected_tool {
+            Tool::SpawnParticle => tool_state.spawn_particle(&mut commands),
+            Tool::SpawnRandomParticles => {
+                tool_state.preview_random_particles(&mut gizmos, cursor_coords);
+            }
+        }
+    }
 }
