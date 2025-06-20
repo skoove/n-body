@@ -118,7 +118,6 @@ fn init_particle_mesh_and_material(
     commands.insert_resource(ParticleColorMaterial(material_handle));
 }
 
-#[allow(clippy::type_complexity)] // sorry clippy i kinda need it
 fn give_particles_materials(
     mut commands: Commands,
     mut query: Query<
@@ -151,7 +150,7 @@ fn count_particles(particles: Query<&Particle>, mut particle_count: ResMut<Parti
     particle_count.0 = particles.iter().count();
 }
 
-pub fn despawn_particles(mut commands: Commands, particles: Query<Entity, With<Particle>>) {
+pub fn despawn_particles(commands: &mut Commands, particles: Query<Entity, With<Particle>>) {
     for entity in particles.iter() {
         commands.entity(entity).despawn();
     }
@@ -257,8 +256,8 @@ mod tests {
             build_test_particle().spawn(&mut commands);
         }
 
-        fn despawn(commands: Commands, particles: Query<Entity, With<Particle>>) {
-            super::despawn_particles(commands, particles);
+        fn despawn(mut commands: Commands, particles: Query<Entity, With<Particle>>) {
+            super::despawn_particles(&mut commands, particles);
         }
 
         app.update();
