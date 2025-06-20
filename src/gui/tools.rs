@@ -185,7 +185,7 @@ impl Default for ToolState {
             position: Vec2::ZERO,
             velocity: Vec2::ZERO,
             mass: 1000.0,
-            radius: 10.0,
+            radius: 5.0,
             max_random_velocity: 0.0,
             amount: 100,
             inner_radius: 0.0,
@@ -223,7 +223,10 @@ pub fn tool_interactions_system(
     if just_pressed {
         match tool_state.selected_tool {
             Tool::SpawnParticle => tool_state.position = cursor_coords,
-            Tool::SpawnRandomParticles => (),
+            Tool::SpawnRandomParticles => {
+                gizmos.circle_2d(cursor_coords, tool_state.inner_radius, Color::WHITE);
+                gizmos.circle_2d(cursor_coords, tool_state.outer_radius, Color::WHITE);
+            }
         }
     }
 
