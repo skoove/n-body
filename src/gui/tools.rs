@@ -92,13 +92,20 @@ impl ToolState {
     /// spawn random particles using the config in the state
     fn spawn_random_particles(&self, commands: &mut Commands) {
         SpawnRandomParticles::new()
+            .position(self.position)
             .radius(self.radius)
+            .mass(self.mass)
             .velocity(self.max_random_velocity)
             .inner_radius(self.inner_radius)
             .outer_radius(self.outer_radius)
             .amount(self.amount)
-            .position(self.position)
             .spawn(commands);
+    }
+
+    /// gizmo preview for random particles tool
+    fn preview_random_particles(&self, gizmos: &mut Gizmos, cursor_coords: Vec2) {
+        gizmos.circle_2d(cursor_coords, self.inner_radius, Color::WHITE);
+        gizmos.circle_2d(cursor_coords, self.outer_radius, Color::WHITE);
     }
 
     // functions for reusable ui widgets
@@ -214,8 +221,7 @@ pub fn tool_interactions_system(
                 gizmos.circle_2d(cursor_coords, tool_state.radius, Color::WHITE);
             }
             Tool::SpawnRandomParticles => {
-                gizmos.circle_2d(cursor_coords, tool_state.inner_radius, Color::WHITE);
-                gizmos.circle_2d(cursor_coords, tool_state.outer_radius, Color::WHITE);
+                tool_state.preview_random_particles(&mut gizmos, cursor_coords)
             }
         }
     }
@@ -224,8 +230,8 @@ pub fn tool_interactions_system(
         match tool_state.selected_tool {
             Tool::SpawnParticle => tool_state.position = cursor_coords,
             Tool::SpawnRandomParticles => {
-                gizmos.circle_2d(cursor_coords, tool_state.inner_radius, Color::WHITE);
-                gizmos.circle_2d(cursor_coords, tool_state.outer_radius, Color::WHITE);
+                tool_state.position = cursor_coords;
+                tool_state.spawn_random_particles(&mut commands)
             }
         }
     }
@@ -239,7 +245,9 @@ pub fn tool_interactions_system(
                 gizmos.arrow_2d(tool_state.position, arrow_end, Color::WHITE);
                 tool_state.velocity = velocity * 0.05;
             }
-            Tool::SpawnRandomParticles => (),
+            Tool::SpawnRandomParticles => {
+                tool_state.preview_random_particles(&mut gizmos, cursor_coords);
+            }
         }
     }
 
@@ -247,8 +255,7 @@ pub fn tool_interactions_system(
         match tool_state.selected_tool {
             Tool::SpawnParticle => tool_state.spawn_particle(&mut commands),
             Tool::SpawnRandomParticles => {
-                tool_state.position = cursor_coords;
-                tool_state.spawn_random_particles(&mut commands)
+                tool_state.preview_random_particles(&mut gizmos, cursor_coords);
             }
         }
     }
