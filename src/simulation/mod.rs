@@ -65,7 +65,7 @@ impl Default for SimSettings {
     fn default() -> Self {
         SimSettings {
             paused: true,
-            gravity_constant: 500.0,
+            gravity_constant: 100.0,
             collision_steps: 2,
             enable_collisions: false,
             should_clear_all_particles: false,
