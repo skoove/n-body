@@ -4,8 +4,8 @@ use bevy::{
     window::PrimaryWindow,
 };
 
-const ZOOM_DAMPING: f32 = 5.0;
-const ZOOM_SENSITIVITY: f32 = 3.0;
+const ZOOM_DAMPING: f32 = 10.0;
+const ZOOM_SENSITIVITY: f32 = 5.0;
 
 const PAN_DAMPING: f32 = 5.0;
 const PAN_SENSITIVITY: f32 = 10.0;
