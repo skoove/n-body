@@ -19,8 +19,8 @@
     librarys = with pkgs; [
       lld
       wayland
-      alsa-lib
-      libudev-zero
+      alsa-lib-with-plugins
+      udev
       wayland
       libxkbcommon
       vulkan-loader
