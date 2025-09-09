@@ -1,9 +1,6 @@
 use bevy::prelude::*;
 
 #[derive(Component)]
-pub struct OldPosition(pub Transform);
-
-#[derive(Component)]
 pub struct Acceleration(pub Vec2);
 
 /// This componenet is intended to be used to render acceleration arrows
