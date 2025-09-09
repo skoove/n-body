@@ -3,12 +3,16 @@ use bevy::prelude::*;
 #[derive(Component)]
 pub struct Acceleration(pub Vec2);
 
+#[derive(Component)]
+pub struct Velocity(pub Vec2);
+
 pub fn update_particle_positions(
     mut query: Query<(&mut Transform, &mut Velocity, &mut Acceleration)>,
     time: Res<Time>,
 ) {
-    query.par_iter_mut().for_each(
-        |(mut position, mut old_position, mut acceleration, mut previous_acceleration)| {
+    query
+        .par_iter_mut()
+        .for_each(|(mut position, mut velocity, mut acceleration)| {
             let dt = time.delta_secs();
             let pos = position.translation.truncate();
             let old_pos = old_position.0.translation.truncate();
@@ -20,8 +24,7 @@ pub fn update_particle_positions(
 
             previous_acceleration.0 = acceleration.0;
             acceleration.0 = Vec2::ZERO;
-        },
-    );
+        });
 }
 
 /// Returns the next position of an object from delta time, position, previous position and acceleration.
