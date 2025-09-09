@@ -3,17 +3,8 @@ use bevy::prelude::*;
 #[derive(Component)]
 pub struct Acceleration(pub Vec2);
 
-/// This componenet is intended to be used to render acceleration arrows
-#[derive(Component)]
-pub struct PreviousAcceleration(pub Vec2);
-
 pub fn update_particle_positions(
-    mut query: Query<(
-        &mut Transform,
-        &mut OldPosition,
-        &mut Acceleration,
-        &mut PreviousAcceleration,
-    )>,
+    mut query: Query<(&mut Transform, &mut Velocity, &mut Acceleration)>,
     time: Res<Time>,
 ) {
     query.par_iter_mut().for_each(

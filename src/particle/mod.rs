@@ -4,7 +4,6 @@ use bevy::render::mesh::CircleMeshBuilder;
 use crate::simulation;
 use crate::simulation::motion::Acceleration;
 use crate::simulation::motion::OldPosition;
-use crate::simulation::motion::PreviousAcceleration;
 
 pub mod spawners;
 
@@ -45,7 +44,6 @@ pub struct ParticleBundle {
     position: Transform,
     old_position: OldPosition,
     acceleration: Acceleration,
-    previous_acceleration: PreviousAcceleration,
 }
 
 impl ParticleBundle {
@@ -57,7 +55,6 @@ impl ParticleBundle {
             position: Transform::from_xyz(0.0, 0.0, 0.0),
             old_position: OldPosition(Transform::from_xyz(0.0, 0.0, 0.0)),
             acceleration: Acceleration(Vec2::ZERO),
-            previous_acceleration: PreviousAcceleration(Vec2::ZERO),
         }
     }
 
