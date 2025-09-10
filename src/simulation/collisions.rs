@@ -42,8 +42,8 @@ pub fn calculate_collisions(
                 let new_vel2 =
                     calculate_collision_impulse(&pos2, &pos1, &vel2, &vel1, mass2, mass1);
 
-                old_position1.0.translation -= new_vel1.extend(0.0);
-                old_position2.0.translation -= new_vel2.extend(0.0);
+                old_position1.0.translation = (pos1 - new_vel1).extend(0.0);
+                old_position2.0.translation = (pos1 - new_vel2).extend(0.0);
 
                 position1.translation += correction.extend(0.0);
                 position2.translation -= correction.extend(0.0);
@@ -62,8 +62,6 @@ fn calculate_collision_impulse(
 ) -> Vec2 {
     let rel_vel = vel1 - vel2;
     let radius = pos1 - pos2;
-    let direction = (pos2 - pos1).normalize();
-    vel1 - ((2.0 * mass2) / (mass1 + mass2))
-        * ((rel_vel.dot(radius)) / (direction * direction))
-        * radius
+    let radius_len2 = radius.length_squared();
+    vel1 - ((2.0 * mass2) / (mass1 + mass2)) * ((rel_vel.dot(radius)) / radius_len2) * radius
 }
