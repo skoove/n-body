@@ -1,7 +1,4 @@
-use crate::{
-    particle::{Mass, Particle, Radius},
-    simulation::motion::OldPosition,
-};
+use crate::particle::{Mass, Particle, Radius};
 use bevy::prelude::*;
 
 use super::SimSettings;
