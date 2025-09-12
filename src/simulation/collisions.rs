@@ -27,8 +27,7 @@ pub fn calculate_collisions(
                 let collision_normal = distance.normalize();
                 let move_distance = overlap / 2.0;
                 let correction = collision_normal * move_distance;
-
-                position1.translation += correction.extend(0.0);
+                let correction1 = mass1 / position1.translation += correction.extend(0.0);
                 position2.translation -= correction.extend(0.0);
             }
         }
