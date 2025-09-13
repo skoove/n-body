@@ -1,5 +1,5 @@
 use bevy::{diagnostic::DiagnosticsStore, prelude::*};
-use bevy_egui::{egui, EguiPlugin, EguiPrimaryContextPass};
+use bevy_egui::{egui, EguiGlobalSettings, EguiPlugin, EguiPrimaryContextPass};
 
 use crate::particle::ParticleCount;
 
@@ -13,6 +13,10 @@ impl Plugin for GuiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(EguiPlugin::default())
             .init_resource::<tools::ToolState>()
+            .insert_resource(EguiGlobalSettings {
+                enable_absorb_bevy_input_system: true,
+                ..Default::default()
+            })
             .add_systems(EguiPrimaryContextPass, egui_system)
             .add_systems(Update, tools::tool_interactions_system);
     }
