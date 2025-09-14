@@ -33,7 +33,7 @@ impl Default for CameraTarget {
     fn default() -> Self {
         Self {
             position: Default::default(),
-            zoom: 0.5,
+            zoom: 0.2,
         }
     }
 }
