@@ -26,9 +26,7 @@ pub fn calc_grav_accel(
         distance = distance.max(*radius_1 + *radius_2);
 
         let distance_cubed = distance * distance * distance;
-        accel_1.0 +=
-            (((sim_settings.gravity_constant * mass_2) / (distance_cubed)) * delta).truncate();
-        accel_2.0 -=
-            (((sim_settings.gravity_constant * mass_1) / (distance_cubed)) * delta).truncate();
+        accel_1.0 += ((mass_2 / (distance_cubed)) * delta).truncate();
+        accel_2.0 -= ((mass_1 / (distance_cubed)) * delta).truncate();
     }
 }

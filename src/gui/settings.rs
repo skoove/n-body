@@ -29,8 +29,6 @@ impl SimSettings {
                 ui.end_row();
 
                 ui.label("gravity constant");
-                ui.add(egui::DragValue::new(&mut self.gravity_constant).speed(1.0));
-                self.gravity_constant = self.gravity_constant.max(0.0);
                 ui.end_row();
 
                 ui.label("collision steps");

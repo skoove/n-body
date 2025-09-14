@@ -55,7 +55,6 @@ fn should_clear_particles(settings: Res<SimSettings>) -> bool {
 #[derive(Resource)]
 pub struct SimSettings {
     pub paused: bool,
-    pub gravity_constant: f32,
     pub collision_steps: u32,
     pub enable_collisions: bool,
     pub should_clear_all_particles: bool,
@@ -65,7 +64,6 @@ impl Default for SimSettings {
     fn default() -> Self {
         SimSettings {
             paused: true,
-            gravity_constant: 100.0,
             collision_steps: 2,
             enable_collisions: false,
             should_clear_all_particles: false,
