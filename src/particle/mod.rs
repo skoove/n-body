@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy::render::mesh::CircleMeshBuilder;
 
 use crate::simulation;
 use crate::simulation::motion::Acceleration;
@@ -12,8 +11,7 @@ pub struct ParticlePlugin;
 
 impl Plugin for ParticlePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, init_particle_mesh_and_material)
-            .add_systems(Update, (give_particles_materials, count_particles))
+        app.add_systems(Update, count_particles)
             .add_systems(
                 FixedUpdate,
                 (spawners::particle_hose_system).run_if(simulation::sim_not_paused),
@@ -21,12 +19,6 @@ impl Plugin for ParticlePlugin {
             .init_resource::<ParticleCount>();
     }
 }
-
-#[derive(Resource)]
-pub struct ParticleColorMaterial(Handle<ColorMaterial>);
-
-#[derive(Resource)]
-pub struct ParticleMesh(Handle<Mesh>);
 
 #[derive(Component)]
 pub struct Particle;
@@ -102,44 +94,6 @@ impl ParticleBundle {
     pub fn velocity(mut self, velo: Vec2) -> Self {
         self.old_position.0.translation = self.position.translation - velo.extend(0.0);
         self
-    }
-}
-
-fn init_particle_mesh_and_material(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
-    let material = ColorMaterial::from_color(Color::srgb(1.0, 1.0, 1.0));
-    let mesh = CircleMeshBuilder::new(1.0, 10);
-    let mesh_handle = meshes.add(mesh);
-    let material_handle = materials.add(material);
-    commands.insert_resource(ParticleMesh(mesh_handle));
-    commands.insert_resource(ParticleColorMaterial(material_handle));
-}
-
-fn give_particles_materials(
-    mut commands: Commands,
-    mut query: Query<
-        (Entity, &Radius, &mut Transform),
-        (
-            With<Particle>,
-            Without<MeshMaterial2d<ColorMaterial>>,
-            Without<Mesh2d>,
-        ),
-    >,
-    mesh: Res<ParticleMesh>,
-    material: Res<ParticleColorMaterial>,
-) {
-    if query.is_empty() {
-        return;
-    }
-
-    for (entity, radius, mut transform) in query.iter_mut() {
-        transform.scale = Vec3::splat(radius.0);
-        let material = MeshMaterial2d(material.0.clone());
-        let mesh = Mesh2d(mesh.0.clone());
-        commands.entity(entity).insert((mesh, material));
     }
 }
 

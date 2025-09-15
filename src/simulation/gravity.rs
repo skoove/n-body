@@ -1,11 +1,9 @@
 use crate::particle::{Mass, Particle, Radius};
 use crate::simulation::motion::Acceleration;
-use crate::simulation::SimSettings;
 use bevy::prelude::*;
 
 pub fn calc_grav_accel(
     mut query: Query<(&mut Acceleration, &Mass, &Transform, &Radius), With<Particle>>,
-    sim_settings: Res<SimSettings>,
 ) {
     let mut iter = query.iter_combinations_mut();
     while let Some(

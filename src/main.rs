@@ -7,6 +7,7 @@ use n_body::camera::CameraPlugin;
 use n_body::gui::GuiPlugin;
 use n_body::input::InputPlugin;
 use n_body::particle::ParticlePlugin;
+use n_body::render::RenderPlugin;
 use n_body::simulation::SimPlugin;
 
 fn main() {
@@ -39,6 +40,7 @@ fn main() {
             InputPlugin,
             SimPlugin,
             ParticlePlugin,
+            RenderPlugin,
         ))
         .insert_resource(ClearColor(Color::srgb_u8(0x28, 0x28, 0x28)))
         .run();

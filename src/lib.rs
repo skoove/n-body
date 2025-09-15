@@ -7,3 +7,4 @@ pub mod gui;
 pub mod input;
 pub mod particle;
 pub mod simulation;
+pub mod render;
